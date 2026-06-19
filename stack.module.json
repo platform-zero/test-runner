@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "test-runner",
+  "repo": "test-runner",
+  "runtimeId": "test-runner",
+  "lifecycle": "active",
+  "dependencies": [],
+  "overlays": [
+    "stack.kotlin/test-runner"
+  ],
+  "sourceRepo": "test-runner"
+}
