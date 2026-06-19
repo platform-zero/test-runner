@@ -5,8 +5,15 @@
   "runtimeId": "test-runner",
   "lifecycle": "active",
   "dependencies": [],
+  "runtimeDependencies": [],
+  "contracts": [
+    "module-contract"
+  ],
+  "smoke": "unsupported",
+  "smokeUnsupportedReason": "source mirror is exercised through test-runners deployed verification",
   "overlays": [
     "stack.kotlin/test-runner"
   ],
-  "sourceRepo": "test-runner"
+  "sourceRepo": "test-runner",
+  "testAssets": []
 }
