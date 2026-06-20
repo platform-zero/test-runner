@@ -34,8 +34,8 @@ class PurgeScriptConfigTest {
 
         listOf(
             "/mnt/stack/pg-ssd/postgres-ssd",
-            "/mnt/stack/nocow/postgres",
-            "/mnt/stack/nocow/mariadb",
+            "/mnt/stack/volumes/postgres_data",
+            "/mnt/stack/volumes/mariadb_data",
             "/mnt/stack/vector-dbs/qdrant",
             "/mnt/stack/vector-dbs/opensearch",
             "/mnt/media/seafile-media",

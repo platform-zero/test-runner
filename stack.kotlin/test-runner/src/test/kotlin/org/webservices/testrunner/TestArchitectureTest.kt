@@ -173,10 +173,8 @@ class TestArchitectureTest {
         assertTrue(transformText.contains("return f\"testdev_bind_{digest}\""))
         assertTrue(transformText.contains("def should_normalize_storage_source"))
         assertFalse(transformText.contains("def testdev_volume_name(service_name: str, source: str)"))
-        assertTrue(kopiaText.contains("\${NOCOW_DB_DIR}/postgres:/backup/postgres:ro"))
-        assertTrue(kopiaText.contains("\${NOCOW_DB_DIR}/mariadb:/backup/mariadb:ro"))
-        assertFalse(kopiaText.contains("postgres_data:/backup/postgres"))
-        assertFalse(kopiaText.contains("mariadb_data:/backup/mariadb"))
+        assertTrue(kopiaText.contains("postgres_data:/backup/postgres:ro"))
+        assertTrue(kopiaText.contains("mariadb_data:/backup/mariadb:ro"))
     }
 
     @Test
