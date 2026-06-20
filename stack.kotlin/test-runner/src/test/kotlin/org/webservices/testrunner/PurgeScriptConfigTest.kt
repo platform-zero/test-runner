@@ -33,10 +33,11 @@ class PurgeScriptConfigTest {
         val purge = repoFileText("ops/host-admin/purge-site-storage-dirs.sh")
 
         listOf(
-            "/mnt/pg_ssd/postgres-ssd",
-            "/mnt/raid/docker/nocow/postgres",
-            "/mnt/raid/docker/nocow/mariadb",
-            "/mnt/labware/vectors/qdrant",
+            "/mnt/stack/pg-ssd/postgres-ssd",
+            "/mnt/stack/nocow/postgres",
+            "/mnt/stack/nocow/mariadb",
+            "/mnt/stack/vector-dbs/qdrant",
+            "/mnt/stack/vector-dbs/opensearch",
             "/mnt/media/seafile-media",
         ).forEach { path ->
             assertTrue(purge.contains("\"$path\""), "storage purge should include $path")
