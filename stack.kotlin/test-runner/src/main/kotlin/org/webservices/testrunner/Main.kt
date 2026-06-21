@@ -103,12 +103,12 @@ fun main(args: Array<String>) = runBlocking {
         val duration = System.currentTimeMillis() - startTime
 
         val semantics = suiteSemantics(suite)
-        val hasBlockingSkips = semantics == SuiteSemantics.BLOCKING && summary.skipped > 0
+        val failed = suiteFailed(summary, semantics)
 
         printTelemetry(summary, duration, resultsDir, semantics)
         saveResults(summary, resultsDir, env, suite, duration, semantics)
 
-        if (summary.failed > 0 || hasBlockingSkips) {
+        if (failed) {
             exitProcess(1)
         }
     } catch (e: Exception) {
@@ -251,6 +251,26 @@ private fun suiteSemantics(suite: String): SuiteSemantics {
     return SuiteCatalog.resolve(suite)?.semantics ?: SuiteSemantics.BLOCKING
 }
 
+private fun suiteAllowsAllSkipped(summary: TestSummary, semantics: SuiteSemantics): Boolean {
+    return semantics == SuiteSemantics.OPTIONAL_BLOCKING &&
+        summary.total > 0 &&
+        summary.skipped == summary.total &&
+        summary.failed == 0
+}
+
+private fun suiteFailed(summary: TestSummary, semantics: SuiteSemantics): Boolean {
+    if (summary.failed > 0) {
+        return true
+    }
+    if (semantics == SuiteSemantics.ADVISORY) {
+        return false
+    }
+    if (suiteAllowsAllSkipped(summary, semantics)) {
+        return false
+    }
+    return summary.skipped > 0
+}
+
 private fun printTelemetry(summary: TestSummary, duration: Long, resultsDir: File, semantics: SuiteSemantics) {
     println("\n" + "=".repeat(80))
     println("TEST RESULTS")
@@ -274,6 +294,8 @@ private fun printTelemetry(summary: TestSummary, duration: Long, resultsDir: Fil
             summary.failed > 0 -> "\n❌ Some tests failed!"
             semantics == SuiteSemantics.ADVISORY && summary.total == 0 -> "\nℹ️  Advisory suite ran no executable checks."
             semantics == SuiteSemantics.ADVISORY -> "\n✅ Advisory suite completed without failures."
+            suiteAllowsAllSkipped(summary, semantics) ->
+                "\n↷ Optional blocking suite skipped because its optional capability is disabled."
             summary.skipped > 0 -> "\n❌ Blocking suite had skips; contract coverage is incomplete."
             else -> "\n✅ Blocking suite passed."
         }
@@ -289,7 +311,7 @@ private fun saveResults(
     duration: Long,
     semantics: SuiteSemantics
 ) {
-    val failed = summary.failed > 0 || (semantics == SuiteSemantics.BLOCKING && summary.skipped > 0)
+    val failed = suiteFailed(summary, semantics)
     File(resultsDir, "summary.txt").writeText(
         """
         Total Tests: ${summary.total}

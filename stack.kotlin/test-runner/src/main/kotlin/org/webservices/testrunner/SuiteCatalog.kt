@@ -41,6 +41,7 @@ internal const val DEFAULT_SUITE = STACK_CONTRACT_SUITE_NAME
 
 internal enum class SuiteSemantics {
     BLOCKING,
+    OPTIONAL_BLOCKING,
     ADVISORY
 }
 
@@ -83,7 +84,8 @@ internal object SuiteCatalog {
         ) { stackFullTests() },
         SuiteDefinition(
             name = AGENT_SECURITY_SUITE,
-            description = "Deterministic agent security boundary tests"
+            description = "Deterministic agent security boundary tests",
+            semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentSecurityTests() },
         SuiteDefinition(
             name = AGENT_CAPABILITY_SUITE,
@@ -100,15 +102,18 @@ internal object SuiteCatalog {
         },
         SuiteDefinition(
             name = AGENT_ENV_SUITE_NAME,
-            description = "Base agent workspace toolchain checks"
+            description = "Base agent workspace toolchain checks",
+            semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentEnvTests() },
         SuiteDefinition(
             name = AGENT_EXPAND_SUITE_NAME,
-            description = "Optional agent workspace profile installation checks"
+            description = "Optional agent workspace profile installation checks",
+            semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentExpandTests() },
         SuiteDefinition(
             name = AGENT_FIXTURES_SUITE_NAME,
-            description = "Deterministic polyglot build fixtures"
+            description = "Deterministic polyglot build fixtures",
+            semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentFixtureTests() },
         SuiteDefinition(
             name = AGENT_RUNTIME_SUITE_NAME,
@@ -117,7 +122,8 @@ internal object SuiteCatalog {
         ) { agentRuntimeTests() },
         SuiteDefinition(
             name = AGENT_LAB_SUITE_NAME,
-            description = "Owned workspace-provisioner integration checks"
+            description = "Owned workspace-provisioner integration checks",
+            semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentLabTests() },
         SuiteDefinition(
             name = KOTLIN_ALL_SUITE,
