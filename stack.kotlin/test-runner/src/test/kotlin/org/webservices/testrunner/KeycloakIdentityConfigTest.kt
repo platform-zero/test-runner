@@ -109,7 +109,7 @@ class KeycloakIdentityConfigTest {
     }
 
     @Test
-    fun `self service onboarding is invite backed and event marker driven`() {
+    fun `onboarding is authenticated and event marker driven`() {
         val onboardingCompose = repoFileText("stack.compose/onboarding.yml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
         val dockerfile = repoFileText("stack.containers/keycloak/Dockerfile")
@@ -117,15 +117,15 @@ class KeycloakIdentityConfigTest {
         val listener = repoFileText("stack.kotlin/keycloak-onboarding-listener/src/main/java/org/webservices/keycloak/onboarding/OnboardingMarkerEventListenerProvider.java")
         val onboardingService = repoFileText("stack.containers/onboarding-service/onboarding_service.py")
 
-        assertTrue(onboardingCompose.contains("ONBOARDING_SELF_SERVICE_ENABLED: \${ONBOARDING_SELF_SERVICE_ENABLED:-false}"))
-        assertTrue(onboardingCompose.contains("ONBOARDING_INVITES_JSON: \${ONBOARDING_INVITES_JSON:-[]}"))
-        assertTrue(onboardingCompose.contains("KEYCLOAK_INTERNAL_URL: http://keycloak:8080"))
+        assertFalse(onboardingCompose.contains("ONBOARDING_SELF_SERVICE_ENABLED"))
+        assertFalse(onboardingCompose.contains("ONBOARDING_INVITES_JSON"))
+        assertFalse(onboardingCompose.contains("KEYCLOAK_ADMIN_PASSWORD"))
         assertTrue(onboardingCompose.contains("onboarding_data:/data"))
 
-        assertTrue(caddyfile.contains("@onboarding_public path /start /api/invites/signup"))
-        assertTrue(caddyfile.contains("reverse_proxy @onboarding_public onboarding:8080"))
-        assertTrue(caddyfile.contains("redir @onboarding_required_{args[0]} https://onboarding.{\$DOMAIN}/start temporary"))
-        assertTrue(caddyfile.contains("redir @onboarding_required_legacy_{args[0]} https://onboarding.{\$DOMAIN}/start temporary"))
+        assertFalse(caddyfile.contains("@onboarding_public path /start /api/invites/signup"))
+        assertTrue(caddyfile.contains("import keycloak_auth_base onboarding"))
+        assertTrue(caddyfile.contains("redir @onboarding_required_{args[0]} https://onboarding.{\$DOMAIN}/ temporary"))
+        assertTrue(caddyfile.contains("redir @onboarding_required_legacy_{args[0]} https://onboarding.{\$DOMAIN}/ temporary"))
 
         assertTrue(dockerfile.contains("/opt/keycloak/providers/keycloak-onboarding-listener.jar"))
         assertTrue(dockerfile.contains("kc.sh build"))
@@ -134,10 +134,10 @@ class KeycloakIdentityConfigTest {
         assertTrue(listener.contains("user.joinGroup(marker)"))
         assertTrue(listener.contains("user.leaveGroup(marker)"))
 
-        assertTrue(onboardingService.contains("\"password\": \"UPDATE_PASSWORD\""))
-        assertTrue(onboardingService.contains("\"totp\": \"CONFIGURE_TOTP\""))
-        assertTrue(onboardingService.contains("ONBOARDING_INVITES_JSON"))
-        assertTrue(onboardingService.contains("create_keycloak_user"))
+        assertTrue(onboardingService.contains("Finish account setup in Keycloak"))
+        assertTrue(onboardingService.contains("account creation is admin managed"))
+        assertFalse(onboardingService.contains("ONBOARDING_INVITES_JSON"))
+        assertFalse(onboardingService.contains("create_keycloak_user"))
     }
 
     @Test

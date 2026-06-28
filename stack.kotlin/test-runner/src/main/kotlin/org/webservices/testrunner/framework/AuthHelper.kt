@@ -36,6 +36,7 @@ class AuthHelper(
     private val protectedVirtualHost: String? = null
 ) {
     private var trustedUsername: String? = null
+    private var trustedGroups: List<String> = emptyList()
 
     private fun HttpRequestBuilder.applyTrustedIdentity() {
         val username = trustedUsername?.takeIf { it.isNotBlank() } ?: return
@@ -44,7 +45,7 @@ class AuthHelper(
         if (!trustedProxySecret.isNullOrBlank()) {
             header("X-Trusted-Proxy-Secret", trustedProxySecret)
             header("X-Remote-User", username)
-            header("X-Remote-Groups", "users")
+            header("X-Remote-Groups", trustedGroups.joinToString(","))
             header("X-Remote-Name", username)
             header(
                 "X-Remote-Email",
@@ -90,9 +91,11 @@ class AuthHelper(
 
     fun trustInternalUser(
         username: String = System.getenv("STACK_ADMIN_USER")?.takeIf { it.isNotBlank() } ?: "sysadmin",
+        groups: List<String> = trustedInternalGroups(),
         passwordMarker: String = "__trusted_internal_edge_auth__"
     ): AuthResult {
         trustedUsername = username
+        trustedGroups = groups.map { it.trim() }.filter { it.isNotBlank() }.distinct()
         return AuthResult.Success(Cookie(name = "trusted_internal_edge_auth", value = username, httpOnly = true, secure = true))
     }
 
@@ -120,6 +123,17 @@ class AuthHelper(
     }
 
     fun getEphemeralUser(): TestUser? = null
+
+    private fun trustedInternalGroups(): List<String> {
+        val configured = System.getenv("STACK_TEST_TRUSTED_GROUPS")
+            ?.split(',', ' ', ';')
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+        return configured.ifEmpty {
+            listOf("admins", "operators", "users", "developers", "agents")
+        }
+    }
 }
 
 sealed class AuthResult {
