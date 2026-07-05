@@ -22,7 +22,7 @@ import java.util.UUID
  * between components works end-to-end.
  *
  * ## Cross-Service Integration Patterns
- * - **Agent-Tool-Server**: Tests LLM tool execution (`callTool`) to validate agent capabilities
+ * - **Agent-Tool-Server**: Tests tool execution (`callTool`) to validate agent capabilities
  * - **Data Pipeline**: Triggers ingestion (`triggerFetch`) to test document flow
  * - **Search-Service**: Performs hybrid search (`search`) to validate vector + BM25 fusion
  * - **BookStack**: Queries knowledge base API to verify pipeline publishing
@@ -151,15 +151,6 @@ class ServiceClient(
         }
     }
 
-    private fun resolveChatCompletionsUrl(rawBaseUrl: String): String {
-        val trimmed = rawBaseUrl.trim().trimEnd('/')
-        return when {
-            trimmed.endsWith("/chat/completions") -> trimmed
-            trimmed.endsWith("/v1") -> "$trimmed/chat/completions"
-            else -> "$trimmed/v1/chat/completions"
-        }
-    }
-
     private fun embeddingServiceUrl(): String {
         val base = System.getenv("EMBEDDING_SERVICE_URL")
             ?.takeIf { it.isNotBlank() }
@@ -180,64 +171,6 @@ class ServiceClient(
     }
 
     private fun jsonText(result: JsonElement): String = Json.encodeToString(JsonElement.serializer(), result)
-
-    private suspend fun directLlmChat(args: JsonObject): ToolResult {
-        return try {
-            val response = client.post(resolveChatCompletionsUrl(endpoints.llmGateway)) {
-                contentType(ContentType.Application.Json)
-                setBody(buildJsonObject {
-                    put("model", args["model"] ?: JsonPrimitive("webservices-qwen2.5-coder-14b"))
-                    put("messages", args["messages"] ?: JsonArray(listOf(JsonObject(mapOf(
-                        "role" to JsonPrimitive("user"),
-                        "content" to JsonPrimitive("Hello")
-                    )))))
-                    args["temperature"]?.let { put("temperature", it) }
-                    args["max_tokens"]?.let { put("max_tokens", it) }
-                })
-            }
-            val body = response.bodyAsText()
-            if (response.status != HttpStatusCode.OK) {
-                return ToolResult.Error(response.status.value, body)
-            }
-
-            val parsed = Json.parseToJsonElement(body).jsonObject
-            val content = parsed["choices"]
-                ?.jsonArray
-                ?.firstOrNull()
-                ?.jsonObject
-                ?.get("message")
-                ?.jsonObject
-                ?.get("content")
-                ?.jsonPrimitive
-                ?.contentOrNull
-                ?: body
-
-            ToolResult.Success(
-                jsonText(
-                    buildJsonObject {
-                        put("content", content)
-                        put("iterations", 1)
-                        put("trace", JsonArray(emptyList()))
-                    }
-                )
-            )
-        } catch (e: Exception) {
-            ToolResult.Error(-1, e.message ?: "LLM request failed")
-        }
-    }
-
-    private suspend fun directLlmChatResponse(args: JsonObject): RawHttpResponse {
-        return when (val result = directLlmChat(args)) {
-            is ToolResult.Success -> RawHttpResponse(
-                HttpStatusCode.OK,
-                jsonText(buildJsonObject { put("result", Json.parseToJsonElement(result.output)) })
-            )
-            is ToolResult.Error -> RawHttpResponse(
-                HttpStatusCode.fromValue(result.statusCode.takeIf { it > 0 } ?: 503),
-                result.message
-            )
-        }
-    }
 
     private suspend fun directEmbedding(args: JsonObject): ToolResult {
         val text = args["text"]?.jsonPrimitive?.contentOrNull
@@ -319,13 +252,13 @@ class ServiceClient(
     }
 
     /**
-     * Calls an agent tool via model-context-server to test LLM-agent integration.
+     * Calls an agent tool via model-context-server to test agent integration.
      *
      * This method validates the full agent tool execution chain:
      * 1. HTTP request to model-context-server `/call-tool` endpoint
      * 2. Plugin routing and capability enforcement
      * 3. Tool execution (e.g., querying PostgreSQL, searching Qdrant, executing Docker commands)
-     * 4. Response formatting for LLM consumption
+     * 4. Response formatting for downstream callers
      *
      * Tests use this to verify that:
      * - Tools execute correctly and return expected results
@@ -345,7 +278,6 @@ class ServiceClient(
                 return ToolResult.Success(text.replace(Regex("\\s+"), " ").trim())
             }
             "uuid_generate" -> return ToolResult.Success(UUID.randomUUID().toString())
-            "llm_chat_completion" -> return directLlmChat(jsonArgs)
             "llm_embed_text" -> return directEmbedding(jsonArgs)
             "semantic_search", "retrieve_stack_context" -> return directSearchTool(jsonArgs)
             "query_mariadb" -> return directQueryMariaDb(jsonArgs)
@@ -386,7 +318,6 @@ class ServiceClient(
             val toolName = parsed["name"]?.jsonPrimitive?.contentOrNull
             val args = parsed["args"]?.jsonObject ?: buildJsonObject {}
             when (toolName) {
-                "llm_chat_completion" -> return directLlmChatResponse(args)
                 "llm_embed_text" -> return when (val result = directEmbedding(args)) {
                     is ToolResult.Success -> RawHttpResponse(HttpStatusCode.OK, result.output)
                     is ToolResult.Error -> RawHttpResponse(
@@ -738,8 +669,8 @@ sealed class ToolResult {
 /**
  * Helper extension to extract agent response content.
  *
- * llm_chat_completion now returns: {"content": "...", "iterations": N, "trace": [...]}
- * This extracts the "content" field for backward compatibility with existing tests.
+ * Some agent-style tools return structured JSON with a top-level "content" field.
+ * This extracts that field for compatibility with callers that only need text.
  */
 fun ToolResult.Success.extractAgentContent(): String {
     return try {

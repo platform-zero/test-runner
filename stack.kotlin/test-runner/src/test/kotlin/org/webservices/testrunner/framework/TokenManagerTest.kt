@@ -58,7 +58,6 @@ class TokenManagerTest {
         dataFetcher = "http://data-fetcher:8095",
         searchService = "https://opensearch:9200",
         pipeline = "http://airflow-webserver:8080",
-        llmGateway = "http://embedding-gpu:8080",
         bookstack = "http://bookstack:80",
         postgres = DatabaseConfig("postgres", 5432, "webservices", "test_runner_user", ""),
         qdrant = "http://qdrant:6333",

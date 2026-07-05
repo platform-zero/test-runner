@@ -73,7 +73,7 @@ class DocumentationCrossCheckTest {
         assertTrue(runtime.contains(".config/webservices/codex.env"))
         assertTrue(runtime.contains("chmod 0600"))
         assertTrue(codexDoc.contains("/workspace-home/.config/webservices/codex.env"))
-        assertTrue(codexDoc.contains("OPENAI_API_KEY"))
+        assertTrue(codexDoc.contains("CODEX_API_KEY"))
     }
 
     @Test

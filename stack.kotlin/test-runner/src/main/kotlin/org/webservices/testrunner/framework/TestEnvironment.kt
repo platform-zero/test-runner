@@ -13,7 +13,7 @@ import java.io.File
  * The endpoints represent the full authentication cascade and data flow:
  * - **Keycloak → OIDC/edge auth → Services**: Authentication flows validated end-to-end
  * - **Airflow → PostgreSQL → Qdrant/OpenSearch**: Document ingestion and retrieval
- * - **Agent-Tool-Server → All Services**: LLM tool execution across the stack
+ * - **Agent-Tool-Server → All Services**: Tool execution across the stack
  *
  * ## Design Rationale
  * - **Environment Agnostic**: Works inside Docker (`service:port`) or via localhost (`localhost:mapped-port`)
@@ -21,11 +21,10 @@ import java.io.File
  * - **Integration Scope**: Includes every service that tests might interact with, from core
  *   infrastructure (PostgreSQL, Keycloak) to end-user applications (Grafana, BookStack, Mastodon)
  *
- * @property modelContextServer Agent-Tool-Server endpoint for LLM tool execution
+ * @property modelContextServer Agent-Tool-Server endpoint for tool execution
  * @property dataFetcher Data fetcher service for triggering pipeline ingestion
  * @property searchService OpenSearch endpoint
  * @property pipeline Pipeline monitoring and control endpoint
- * @property llmGateway Inference gateway endpoint for LLM routing and function calling
  * @property bookstack BookStack knowledge base API endpoint
  * @property postgres PostgreSQL connection config (shared by Airflow, ingestion runner, tests)
  * @property mariadb MariaDB connection config (used by BookStack)
@@ -63,7 +62,6 @@ data class ServiceEndpoints(
     val dataFetcher: String,
     val searchService: String,
     val pipeline: String,
-    val llmGateway: String,
     val bookstack: String,
     val postgres: DatabaseConfig,
     val mariadb: DatabaseConfig? = null,
@@ -128,7 +126,6 @@ data class ServiceEndpoints(
             dataFetcher = env("DATA_FETCHER_URL") ?: "http://data-fetcher:8095",
             searchService = env("SEARCH_SERVICE_URL") ?: env("OPENSEARCH_URL") ?: "http://opensearch:9200",
             pipeline = env("PIPELINE_URL") ?: "http://airflow-webserver:8080",
-            llmGateway = env("LLM_GATEWAY_URL") ?: "http://embedding-gpu:8080",
             bookstack = env("BOOKSTACK_URL") ?: "http://bookstack:80",
             postgres = DatabaseConfig(
                 host = env("POSTGRES_HOST") ?: "postgres",
@@ -180,7 +177,7 @@ data class ServiceEndpoints(
             
             kopia = env("KOPIA_URL") ?: "http://kopia:51515",
             
-            portal = env("PORTAL_URL") ?: "http://portal:8080",
+            portal = env("PORTAL_URL") ?: "http://portal:3000",
             homepage = env("HOMEPAGE_URL"),
             radicale = env("RADICALE_URL"),
             ntfy = env("NTFY_URL") ?: "http://ntfy:80",
@@ -206,7 +203,6 @@ data class ServiceEndpoints(
             dataFetcher = "http://localhost:18095",
             searchService = env("OPENSEARCH_URL") ?: "https://localhost:19200",
             pipeline = "http://localhost:8080",
-            llmGateway = env("LLM_GATEWAY_URL") ?: "http://localhost:8080",
             bookstack = "http://localhost:10080",
             postgres = DatabaseConfig("localhost", 15432, "webservices", "test_runner_user", ""),
             mariadb = DatabaseConfig("localhost", 13306, "bookstack", "bookstack", ""),
@@ -244,7 +240,7 @@ data class ServiceEndpoints(
             
             kopia = "http://localhost:51515",
             
-            portal = env("PORTAL_URL") ?: "http://localhost:8083",
+            portal = env("PORTAL_URL") ?: "http://localhost:3000",
             homepage = env("HOMEPAGE_URL"),
             radicale = env("RADICALE_URL"),
             ntfy = "http://localhost:8081",

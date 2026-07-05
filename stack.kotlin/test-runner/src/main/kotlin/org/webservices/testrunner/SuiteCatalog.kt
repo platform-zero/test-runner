@@ -19,7 +19,6 @@ import org.webservices.testrunner.suites.agentEnvTests
 import org.webservices.testrunner.suites.agentExpandTests
 import org.webservices.testrunner.suites.agentFixtureTests
 import org.webservices.testrunner.suites.agentLabTests
-import org.webservices.testrunner.suites.agentLlmQualityTests
 import org.webservices.testrunner.suites.agentRuntimeTests
 import org.webservices.testrunner.suites.agentSecurityTests
 import org.webservices.testrunner.suites.stackAppTests
@@ -28,7 +27,6 @@ import org.webservices.testrunner.suites.stackContractTests
 import org.webservices.testrunner.suites.stackCoreTests
 import org.webservices.testrunner.suites.stackFullTests
 import org.webservices.testrunner.suites.stackLiveIngestionTests
-import org.webservices.testrunner.suites.stackLlmCapabilityTests
 import org.webservices.testrunner.suites.recoveryTests
 
 internal const val LEGACY_DEFAULT_SUITE = "webservices"
@@ -93,12 +91,10 @@ internal object SuiteCatalog {
         ) { agentCapabilityContractTests() },
         SuiteDefinition(
             name = AGENT_ADVISORY_SUITE,
-            description = "Advisory agent reliability and LLM drift checks",
+            description = "Advisory agent reliability checks",
             semantics = SuiteSemantics.ADVISORY
         ) {
             agentCapabilityTests()
-            agentLlmQualityTests()
-            stackLlmCapabilityTests()
         },
         SuiteDefinition(
             name = AGENT_ENV_SUITE_NAME,
@@ -133,9 +129,7 @@ internal object SuiteCatalog {
             agentSecurityTests()
             agentCapabilityContractTests()
             agentCapabilityTests()
-            agentLlmQualityTests()
             agentRuntimeTests()
-            stackLlmCapabilityTests()
             agentEnvTests()
             agentExpandTests()
             agentFixtureTests()
