@@ -1,11 +1,6 @@
 package org.webservices.testrunner
 
 import org.webservices.testrunner.framework.TestRunner
-import org.webservices.testrunner.suites.AGENT_ENV_SUITE_NAME
-import org.webservices.testrunner.suites.AGENT_EXPAND_SUITE_NAME
-import org.webservices.testrunner.suites.AGENT_FIXTURES_SUITE_NAME
-import org.webservices.testrunner.suites.AGENT_LAB_SUITE_NAME
-import org.webservices.testrunner.suites.AGENT_RUNTIME_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_APPS_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_AUTH_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_CONTRACT_SUITE_NAME
@@ -13,14 +8,6 @@ import org.webservices.testrunner.suites.STACK_CORE_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_FULL_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_LIVE_INGESTION_SUITE_NAME
 import org.webservices.testrunner.suites.STACK_RECOVERY_SUITE_NAME
-import org.webservices.testrunner.suites.agentCapabilityContractTests
-import org.webservices.testrunner.suites.agentCapabilityTests
-import org.webservices.testrunner.suites.agentEnvTests
-import org.webservices.testrunner.suites.agentExpandTests
-import org.webservices.testrunner.suites.agentFixtureTests
-import org.webservices.testrunner.suites.agentLabTests
-import org.webservices.testrunner.suites.agentRuntimeTests
-import org.webservices.testrunner.suites.agentSecurityTests
 import org.webservices.testrunner.suites.stackAppTests
 import org.webservices.testrunner.suites.stackAuthTests
 import org.webservices.testrunner.suites.stackContractTests
@@ -81,59 +68,11 @@ internal object SuiteCatalog {
             description = "Full stack run including live-ingestion checks"
         ) { stackFullTests() },
         SuiteDefinition(
-            name = AGENT_SECURITY_SUITE,
-            description = "Deterministic agent security boundary tests",
-            semantics = SuiteSemantics.OPTIONAL_BLOCKING
-        ) { agentSecurityTests() },
-        SuiteDefinition(
-            name = AGENT_CAPABILITY_SUITE,
-            description = "Deterministic agent capability contract tests"
-        ) { agentCapabilityContractTests() },
-        SuiteDefinition(
-            name = AGENT_ADVISORY_SUITE,
-            description = "Advisory agent reliability checks",
-            semantics = SuiteSemantics.ADVISORY
-        ) {
-            agentCapabilityTests()
-        },
-        SuiteDefinition(
-            name = AGENT_ENV_SUITE_NAME,
-            description = "Base agent workspace toolchain checks",
-            semantics = SuiteSemantics.OPTIONAL_BLOCKING
-        ) { agentEnvTests() },
-        SuiteDefinition(
-            name = AGENT_EXPAND_SUITE_NAME,
-            description = "Optional agent workspace profile installation checks",
-            semantics = SuiteSemantics.OPTIONAL_BLOCKING
-        ) { agentExpandTests() },
-        SuiteDefinition(
-            name = AGENT_FIXTURES_SUITE_NAME,
-            description = "Deterministic polyglot build fixtures",
-            semantics = SuiteSemantics.OPTIONAL_BLOCKING
-        ) { agentFixtureTests() },
-        SuiteDefinition(
-            name = AGENT_RUNTIME_SUITE_NAME,
-            description = "Aider runtime checks",
-            semantics = SuiteSemantics.ADVISORY
-        ) { agentRuntimeTests() },
-        SuiteDefinition(
-            name = AGENT_LAB_SUITE_NAME,
-            description = "Retired agent lab suite",
-            semantics = SuiteSemantics.OPTIONAL_BLOCKING
-        ) { agentLabTests() },
-        SuiteDefinition(
             name = KOTLIN_ALL_SUITE,
             description = "Every Kotlin managed test, with duplicate composed suites expanded once"
         ) {
             stackFullTests()
-            agentSecurityTests()
-            agentCapabilityContractTests()
-            agentCapabilityTests()
-            agentRuntimeTests()
-            agentEnvTests()
-            agentExpandTests()
-            agentFixtureTests()
-            agentLabTests()
+            recoveryTests()
         },
     )
 

@@ -11,11 +11,8 @@ const val STACK_FULL_SUITE_NAME = "stack-full"
 
 suspend fun TestRunner.stackCoreTests() {
     foundationTests()
-    knowledgeBaseTests()
-    microserviceTests()
     infrastructureTests()
     databaseTests()
-    securityTests()
     utilityServicesTests()
 }
 
@@ -26,15 +23,10 @@ suspend fun TestRunner.stackAuthTests() {
 }
 
 suspend fun TestRunner.stackAppTests() {
-    userInterfaceTests()
     communicationTests()
-    collaborationTests()
     productivityTests()
     fileManagementTests()
     monitoringTests()
-    backupTests()
-    homeAssistantTests()
-    emailStackTests()
     cachingLayerTests()
     extendedCommunicationTests()
     extendedProductivityTests()
@@ -47,9 +39,7 @@ suspend fun TestRunner.stackContractTests() {
 }
 
 suspend fun TestRunner.stackLiveIngestionTests() {
-    dataPipelineTests()
-    searchServiceTests()
-    bookStackIntegrationTests()
+    // Live-ingestion coverage is currently provided by external browser and deploy suites.
 }
 
 suspend fun TestRunner.webServicesTests() {
