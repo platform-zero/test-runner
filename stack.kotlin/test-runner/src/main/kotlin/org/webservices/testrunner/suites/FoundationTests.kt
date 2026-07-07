@@ -215,48 +215,6 @@ suspend fun TestRunner.foundationTests() = suite("Foundation Tests") {
         response.status shouldBe HttpStatusCode.NotFound
     }
 
-    test("Workspace provisioner health endpoint responds") {
-        workspaceProvisionerOptionalSkipReason()?.let { skip(it) }
-        val response = requestHttpClient.get("http://workspace-provisioner:8120/health")
-        response.status shouldBe HttpStatusCode.OK
-
-        val body = response.bodyAsText()
-        body shouldContain "\"status\""
-        body shouldContain "ok"
-    }
-
-    test("Workspace provisioner ready endpoint reports usable state") {
-        workspaceProvisionerOptionalSkipReason()?.let { skip(it) }
-        val response = requestHttpClient.get("http://workspace-provisioner:8120/ready")
-        response.status shouldBe HttpStatusCode.OK
-
-        val statusBody = response.bodyAsText()
-        val status = parseStatus(statusBody)
-        val overall = status["status"]?.jsonPrimitive?.contentOrNull
-        val workspaces = status["workspaces"]?.jsonPrimitive?.contentOrNull?.toIntOrNull()
-
-        require(overall == "ok") { "Workspace provisioner ready endpoint is not healthy: $statusBody" }
-        require(workspaces != null && workspaces >= 0) {
-            "Workspace provisioner ready endpoint returned invalid workspace count: $statusBody"
-        }
-    }
-
-    test("Workspace provisioner OIDC discovery is publicly readable") {
-        workspaceProvisionerOptionalSkipReason()?.let { skip(it) }
-        val response = requestHttpClient.get("http://workspace-provisioner:8120/api/oidc/discovery")
-        response.status shouldBe HttpStatusCode.OK
-        val body = response.bodyAsText()
-        body shouldContain "\"authorization_endpoint\""
-        body shouldContain "\"token_endpoint\""
-        body shouldContain "\"client_id\""
-    }
-
-    test("Workspace provisioner rejects unauthenticated workspace listing") {
-        workspaceProvisionerOptionalSkipReason()?.let { skip(it) }
-        val response = requestHttpClient.get("http://workspace-provisioner:8120/api/workspaces")
-        response.status shouldBe HttpStatusCode.Unauthorized
-    }
-
     test("Embedding backend health endpoint responds") {
         if (System.getenv("TESTDEV_SKIP_GPU_INGESTION") == "1") {
             println("      ✓ Embedding backend intentionally excluded from testdev profile")

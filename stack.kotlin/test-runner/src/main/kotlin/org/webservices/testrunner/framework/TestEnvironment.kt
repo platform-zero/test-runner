@@ -122,7 +122,7 @@ data class ServiceEndpoints(
          * @return ServiceEndpoints configured for Docker container network access
          */
         fun fromEnvironment(): ServiceEndpoints = ServiceEndpoints(
-            modelContextServer = env("MODEL_CONTEXT_SERVER_URL") ?: "http://workspace-provisioner:8120",
+            modelContextServer = env("MODEL_CONTEXT_SERVER_URL") ?: "http://portal:3000",
             dataFetcher = env("DATA_FETCHER_URL") ?: "http://data-fetcher:8095",
             searchService = env("SEARCH_SERVICE_URL") ?: env("OPENSEARCH_URL") ?: "http://opensearch:9200",
             pipeline = env("PIPELINE_URL") ?: "http://airflow-webserver:8080",
@@ -154,7 +154,7 @@ data class ServiceEndpoints(
                 ?: "http://keycloak:8080",
             keycloakInternal = env("KEYCLOAK_INTERNAL_URL") ?: "http://keycloak:8080",
             
-            openWebUI = env("OPEN_WEBUI_URL") ?: "http://workspace-provisioner:8120",
+            openWebUI = env("OPEN_WEBUI_URL") ?: "http://portal:3000",
             jupyterhub = env("JUPYTERHUB_URL") ?: "http://jupyterhub:8000",
             
             mailserver = env("MAILSERVER_URL") ?: "mailserver:25",

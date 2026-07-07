@@ -339,7 +339,7 @@ class TokenManager(
                 val token = jsonBody["token"]?.jsonPrimitive?.content
                     ?: return Result.failure(Exception("No token in response"))
 
-                tokens["workspaces"] = token
+                tokens["openwebui"] = token
                 Result.success(token)
             } else if (response.status == HttpStatusCode.TemporaryRedirect) {
                 Result.failure(Exception("Open-WebUI requires browser SSO via Keycloak"))
@@ -422,7 +422,7 @@ class TokenManager(
                         header("Authorization", "Token $id:$secret")
                     }
                 }
-                "planka", "workspaces" -> {
+                "planka", "openwebui" -> {
                     token?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 }
             }
@@ -447,7 +447,7 @@ class TokenManager(
                         header("Authorization", "Token $id:$secret")
                     }
                 }
-                "planka", "workspaces" -> {
+                "planka", "openwebui" -> {
                     token?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 }
             }

@@ -54,7 +54,7 @@ class TokenManagerTest {
     }
 
     private fun createTestEndpoints() = ServiceEndpoints(
-        modelContextServer = "http://workspace-provisioner:8120",
+        modelContextServer = "http://portal:3000",
         dataFetcher = "http://data-fetcher:8095",
         searchService = "https://opensearch:9200",
         pipeline = "http://airflow-webserver:8080",
@@ -64,7 +64,7 @@ class TokenManagerTest {
         caddy = "http://caddy:80",
         keycloak = "http://keycloak:8080",
         keycloakInternal = "http://keycloak:8080",
-        openWebUI = "http://workspace-provisioner:8120",
+        openWebUI = "http://portal:3000",
         jupyterhub = "http://jupyterhub:8000",
         mailserver = "mailserver:25",
         synapse = "http://synapse:8008",

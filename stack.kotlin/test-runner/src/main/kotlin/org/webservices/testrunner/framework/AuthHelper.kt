@@ -40,8 +40,7 @@ class AuthHelper(
 
     private fun HttpRequestBuilder.applyTrustedIdentity() {
         val username = trustedUsername?.takeIf { it.isNotBlank() } ?: return
-        val trustedProxySecret = System.getenv("WORKSPACE_PROXY_AUTH_SECRET")?.takeIf { it.isNotBlank() }
-            ?: System.getenv("MODEL_CONTEXT_PROXY_AUTH_SECRET")?.takeIf { it.isNotBlank() }
+        val trustedProxySecret = System.getenv("MODEL_CONTEXT_PROXY_AUTH_SECRET")?.takeIf { it.isNotBlank() }
         if (!trustedProxySecret.isNullOrBlank()) {
             header("X-Trusted-Proxy-Secret", trustedProxySecret)
             header("X-Remote-User", username)

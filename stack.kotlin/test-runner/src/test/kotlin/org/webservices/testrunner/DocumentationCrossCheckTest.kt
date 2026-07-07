@@ -19,8 +19,6 @@ class DocumentationCrossCheckTest {
         assertTrue(doc.contains("Donetick | Keycloak edge-auth and app OAuth2 client wiring"))
         assertTrue(doc.contains("Vaultwarden | Keycloak SSO entry path derives email"))
         assertTrue(doc.contains("ERPNext | Keycloak edge-auth and app OAuth2 client wiring"))
-        assertTrue(doc.contains("Disposable Workspaces | Keycloak edge-auth to the dispatcher"))
-
         assertTrue(caddyfile.contains("sogo.{\$DOMAIN}"))
         assertTrue(caddyfile.contains("Jellyfin password login is disabled; use Keycloak SSO"))
         assertTrue(caddyfile.contains("import keycloak_group_allow donetick users|operators|admins"))
@@ -54,29 +52,6 @@ class DocumentationCrossCheckTest {
     }
 
     @Test
-    fun `workspace docs match dispatcher notebook ttyd ssh and codex token endpoints`() {
-        val workspaceDoc = repoFileText("stack.containers/workspace-provisioner/README.md")
-        val codexDoc = repoFileText("stack.containers/agent-workspace/codex/README.md")
-        val main = repoFileText("stack.kotlin/workspace-provisioner/src/main/kotlin/org/webservices/workspaceprovisioner/Main.kt")
-        val runtime = repoFileText("stack.kotlin/workspace-provisioner/src/main/kotlin/org/webservices/workspaceprovisioner/DockerWorkspaceRuntime.kt")
-        val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-
-        listOf("/shell/auth", "/notebook/auth", "/ssh-cert", "/codex-token").forEach { endpoint ->
-            assertTrue(workspaceDoc.contains(endpoint), "workspace README should document $endpoint")
-            assertTrue(main.contains(endpoint.trimStart('/').substringBefore('/')), "workspace API should include $endpoint")
-        }
-        assertTrue(workspaceDoc.contains("X-Workspace-Ttyd-Port"))
-        assertTrue(workspaceDoc.contains("X-Workspace-Notebook-Port"))
-        assertTrue(workspaceDoc.contains("write-only runtime secrets"))
-        assertTrue(caddyfile.contains("copy_headers X-Workspace-Ttyd-Port X-Workspace-Ttyd-Base-Path X-Workspace-Health"))
-        assertTrue(caddyfile.contains("copy_headers X-Workspace-Notebook-Port X-Workspace-Notebook-Base-Path"))
-        assertTrue(runtime.contains(".config/webservices/codex.env"))
-        assertTrue(runtime.contains("chmod 0600"))
-        assertTrue(codexDoc.contains("/workspace-home/.config/webservices/codex.env"))
-        assertTrue(codexDoc.contains("CODEX_API_KEY"))
-    }
-
-    @Test
     fun `architecture and operations docs match procedural docs and purge implementation`() {
         val readme = repoFileText("README.md")
         val architecture = repoFileText("stack.config/stack-knowledge/02-webservices-stack-architecture.md")
@@ -86,7 +61,6 @@ class DocumentationCrossCheckTest {
         val proceduralPublisher = repoFileText("stack.config/bookstack/publish-procedural-docs.php")
 
         assertTrue(architecture.contains("Procedural documentation is generated at runtime"))
-        assertTrue(architecture.contains("Disposable Workspaces use a dispatcher model"))
         assertTrue(readme.contains("Start with [docs/service-standard.md]"))
         assertTrue(proceduralPublisher.contains("URL Index"))
         assertTrue(proceduralPublisher.contains("API Index"))

@@ -1,9 +1,7 @@
 package org.webservices.testrunner.framework
 
 fun isolatedDockerHostFromEnv(): String {
-    val explicitHost = System.getenv("ISOLATED_DOCKER_VM_DOCKER_HOST")
-        ?: System.getenv("ISOLATED_DOCKER_HOST")
-        ?: System.getenv("DOCKER_HOST_ISOLATED")
+    val explicitHost = System.getenv("ISOLATED_DOCKER_HOST")
 
     if (!explicitHost.isNullOrBlank()) {
         return explicitHost
@@ -18,5 +16,5 @@ fun isolatedDockerHostFromEnv(): String {
         return dockerHost
     }
 
-    return "tcp://docker-vm-controller-proxy:2375"
+    return "tcp://docker-socket-controller-proxy:2375"
 }

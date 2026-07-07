@@ -18,36 +18,6 @@ class JupyterAndTunnelHardeningConfigTest {
         assertTrue(startupScript.contains("os.umask(old_umask)"))
     }
 
-    @Test
-    fun `isolated docker vm tunnel uses non-root runtime and locked-down container settings`() {
-        val compose = repoFileText("stack.compose/docker-proxy.yml")
-        val dockerfile = repoFileText("stack.containers/isolated-docker-vm-tunnel/Dockerfile")
-        val entrypoint = repoFileText("stack.containers/isolated-docker-vm-tunnel/entrypoint.sh")
-
-        assertTrue(compose.contains("user: \"1000:1000\""))
-        assertTrue(compose.contains("Keep the host private key 0600"))
-        assertTrue(compose.contains("security_opt:\n      - no-new-privileges:true"))
-        assertTrue(compose.contains("cap_drop:\n      - ALL"))
-        assertTrue(compose.contains("read_only: true"))
-        assertTrue(compose.contains("tmpfs:\n      - /tmp"))
-        assertTrue(compose.contains("ISOLATED_DOCKER_VM_KNOWN_HOSTS: /home/tunnel/.ssh/known_hosts"))
-        assertTrue(compose.contains("ISOLATED_DOCKER_VM_IDENTITY_FILE: /home/tunnel/.ssh/id_ed25519"))
-        assertTrue(
-            compose.contains("ISOLATED_DOCKER_VM_SSH_DIR:?Set ISOLATED_DOCKER_VM_SSH_DIR to a dedicated SSH directory for isolated-docker-vm-tunnel"),
-        )
-        assertFalse(compose.contains("${'$'}{HOME}/.ssh:/root/.ssh:ro"))
-        assertFalse(compose.contains("/root/.ssh/known_hosts"))
-
-        assertTrue(dockerfile.contains("adduser -S -D -h /home/tunnel"))
-        assertTrue(dockerfile.contains("adduser -S -D -h /home/tunnel -s /sbin/nologin -G hostuser -u 1000 hostuser"))
-        assertTrue(dockerfile.contains("USER tunnel:tunnel"))
-        assertTrue(entrypoint.contains("KNOWN_HOSTS_FILE=\"${'$'}{ISOLATED_DOCKER_VM_KNOWN_HOSTS:-/home/tunnel/.ssh/known_hosts}\""))
-        assertTrue(entrypoint.contains("IDENTITY_FILE=\"${'$'}{ISOLATED_DOCKER_VM_IDENTITY_FILE:-}\""))
-        assertTrue(entrypoint.contains("SSH identity file is not readable"))
-        assertTrue(entrypoint.contains("ssh ${'$'}{SSH_ARGS} \"${'$'}{ISOLATED_DOCKER_VM_HOST}\""))
-    }
-
-    @Test
     fun `jupyterhub does not inject shared production secrets into user notebooks`() {
         val compose = repoFileText("stack.compose/jupyterhub.yml")
         val config = repoFileText("stack.config/jupyterhub/jupyterhub_config.py")

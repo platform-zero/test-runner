@@ -119,12 +119,12 @@ class ServiceClient(
      * the foundation for all integration tests - if health checks fail, the stack is
      * not ready for testing.
      *
-     * @param service Service name ("workspace-provisioner", "pipeline", "opensearch", "data-fetcher")
+     * @param service Service name ("model-context-server", "pipeline", "opensearch", "data-fetcher")
      * @return HealthStatus indicating whether the service is healthy and its HTTP status code
      */
     suspend fun healthCheck(service: String): HealthStatus {
         val url = when (service) {
-            "workspace-provisioner", "model-context-server" -> "${endpoints.modelContextServer}/health"
+            "model-context-server" -> "${endpoints.modelContextServer}/health"
             "pipeline" -> "${endpoints.pipeline}/health"
             "opensearch" -> "${endpoints.searchService}/_cluster/health"
             

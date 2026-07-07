@@ -72,28 +72,6 @@ class StackDeploymentHelpersTest {
     }
 
     @Test
-    fun `workspace provisioner depends on platform prerequisites`() {
-        val composeSource = Files.readString(repoFile("stack.compose/workspace-provisioner.yml"))
-
-        assertFalse(
-            composeSource.contains("authelia"),
-            "Workspace provisioner must not depend on Authelia"
-        )
-        assertTrue(
-            composeSource.contains("docker-vm-controller-proxy:\n        condition: service_started"),
-            "Workspace provisioner should wait for docker-vm-controller-proxy startup"
-        )
-        assertTrue(
-            composeSource.contains("DOCKER_BUILDKIT: \"0\""),
-            "Workspace provisioner image builds should use the classic Docker build endpoint exposed by the isolated controller proxy"
-        )
-        assertTrue(
-            composeSource.contains("opensearch:\n        condition: service_started"),
-            "Workspace provisioner should wait for OpenSearch startup"
-        )
-    }
-
-    @Test
     fun `deploy reloads active units when rebuilt local images change`() {
         val deployScript = Files.readString(repoFile("scripts/deploy.sh"))
 
@@ -128,25 +106,6 @@ class StackDeploymentHelpersTest {
 
         assertTrue(searchPostIndex >= 0, "ServiceClient should post searches to OpenSearch")
         assertTrue(authIndex in searchPostIndex until contentTypeIndex, "Search requests should include OpenSearch basic auth")
-    }
-
-    @Test
-    fun `caddy can resolve isolated workspace runtime host`() {
-        val caddyCompose = Files.readString(repoFile("stack.compose/caddy.yml"))
-        val renderValues = Files.readString(repoFile("scripts/lib/render-values.sh"))
-
-        assertTrue(
-            caddyCompose.contains("\"${'$'}{WORKSPACE_RUNTIME_PUBLIC_HOST}:${'$'}{WORKSPACE_RUNTIME_PUBLIC_ADDRESS}\""),
-            "Caddy should receive an explicit host mapping for the isolated labware runtime"
-        )
-        assertTrue(
-            renderValues.contains("render_set WORKSPACE_RUNTIME_PUBLIC_ADDRESS"),
-            "Runtime rendering should publish the resolved labware address into stack.env"
-        )
-        assertTrue(
-            renderValues.contains("runtime.isolated_docker_vm_public_address"),
-            "Site bundles should be able to override the public labware address"
-        )
     }
 
     @Test

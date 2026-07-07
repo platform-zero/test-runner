@@ -15,11 +15,11 @@ class CaddyVirtualHostTest {
             url("https://auth.example.com/api/config")
         }
 
-        builder.applyCaddyVirtualHost("workspaces.example.com")
+        builder.applyCaddyVirtualHost("portal.example.com")
 
         assertEquals("https", builder.url.protocol.name)
-        assertEquals("workspaces.example.com", builder.url.host)
-        assertEquals("https://workspaces.example.com/api/config", builder.url.toString())
+        assertEquals("portal.example.com", builder.url.host)
+        assertEquals("https://portal.example.com/api/config", builder.url.toString())
         assertNull(builder.headers[HttpHeaders.Host])
         assertNull(builder.headers["X-Forwarded-Host"])
         assertNull(builder.headers["X-Forwarded-Proto"])
@@ -31,13 +31,13 @@ class CaddyVirtualHostTest {
             url("http://caddy:80/api/config")
         }
 
-        builder.applyCaddyVirtualHost("workspaces.example.com")
+        builder.applyCaddyVirtualHost("portal.example.com")
 
         assertEquals("http", builder.url.protocol.name)
         assertEquals("caddy", builder.url.host)
         assertEquals("http://caddy/api/config", builder.url.toString())
-        assertEquals("workspaces.example.com", builder.headers[HttpHeaders.Host])
-        assertEquals("workspaces.example.com", builder.headers["X-Forwarded-Host"])
+        assertEquals("portal.example.com", builder.headers[HttpHeaders.Host])
+        assertEquals("portal.example.com", builder.headers["X-Forwarded-Host"])
         assertEquals("https", builder.headers["X-Forwarded-Proto"])
     }
 }

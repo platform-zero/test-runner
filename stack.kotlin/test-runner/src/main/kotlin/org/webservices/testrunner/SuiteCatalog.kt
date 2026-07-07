@@ -118,7 +118,7 @@ internal object SuiteCatalog {
         ) { agentRuntimeTests() },
         SuiteDefinition(
             name = AGENT_LAB_SUITE_NAME,
-            description = "Owned workspace-provisioner integration checks",
+            description = "Retired agent lab suite",
             semantics = SuiteSemantics.OPTIONAL_BLOCKING
         ) { agentLabTests() },
         SuiteDefinition(
