@@ -46,7 +46,7 @@ class KeycloakIdentityConfigTest {
         assertTrue(caddyfile.contains("(keycloak_auth_base)"))
         assertTrue(caddyfile.contains("(keycloak_group_allow)"))
         assertTrue(caddyfile.contains("forward_auth keycloak-auth-gateway:4180"))
-        assertTrue(caddyfile.contains("header X-Trusted-Proxy-Secret {\$MODEL_CONTEXT_PROXY_AUTH_SECRET}"))
+        assertTrue(caddyfile.contains("header X-Trusted-Proxy-Secret {\$MODEL_CONTEXT_PROXY_AUTH_SECRET:__disabled__}"))
         assertTrue(caddyfile.contains("remote_ip private_ranges"))
         assertTrue(caddyfile.contains("request_header -X-Trusted-Proxy-Secret"))
         assertTrue(caddyfile.contains("import keycloak_auth grafana"))
