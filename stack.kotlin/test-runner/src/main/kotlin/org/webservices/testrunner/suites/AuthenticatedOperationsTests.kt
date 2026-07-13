@@ -15,7 +15,11 @@ import kotlin.random.Random
 
 suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Operations Tests") {
     suspend fun authenticatedCaddyGet(subdomain: String, path: String = "/"): HttpResponse {
-        return auth.authenticatedGet("https://${caddyHost(subdomain)}${if (path.startsWith("/")) path else "/$path"}")
+        val host = caddyHost(subdomain)
+        val baseUrl = System.getenv("CADDY_URL")?.takeIf { it.isNotBlank() } ?: "http://caddy:80"
+        return auth.authenticatedGet(caddyUrl(baseUrl, path)) {
+            applyCaddyVirtualHost(host)
+        }
     }
 
     suspend fun probeFirstReachable(
