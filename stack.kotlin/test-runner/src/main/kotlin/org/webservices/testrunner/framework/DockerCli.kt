@@ -90,9 +90,16 @@ object DockerCli {
         if (runtime == "docker" && !dockerHost.isNullOrBlank()) {
             processBuilder.environment()["DOCKER_HOST"] = dockerHost
         }
-        val process = processBuilder.start()
-        val output = process.inputStream.bufferedReader().readText().trim()
-        val exitCode = process.waitFor()
-        return DockerCommandResult(exitCode = exitCode, output = output)
+        return try {
+            val process = processBuilder.start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            val exitCode = process.waitFor()
+            DockerCommandResult(exitCode = exitCode, output = output)
+        } catch (error: java.io.IOException) {
+            DockerCommandResult(
+                exitCode = 127,
+                output = "Unable to execute container CLI '$runtime': ${error.message.orEmpty()}"
+            )
+        }
     }
 }
