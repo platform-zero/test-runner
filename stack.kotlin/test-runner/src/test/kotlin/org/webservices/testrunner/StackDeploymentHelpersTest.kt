@@ -17,56 +17,47 @@ class StackDeploymentHelpersTest {
     }
 
     @Test
-    fun `docker compose command construction uses bundle root and runtime env`() {
-        val bundleRoot = "/app/build"
-        val composeFile = "$bundleRoot/docker-compose.yml"
-        val runtimeEnvFile = "/app/runtime/stack.env"
+    fun `podman systemd command construction targets generated stack units`() {
+        val unit = "webservices.target"
 
         val command = listOf(
-            "docker",
-            "compose",
-            "--env-file", runtimeEnvFile,
-            "-f", composeFile,
-            "up", "-d"
+            "systemctl",
+            "start",
+            unit
         )
 
-        assertEquals("docker", command[0])
-        assertEquals("compose", command[1])
-        assertEquals("--env-file", command[2])
-        assertEquals(runtimeEnvFile, command[3])
-        assertEquals("-f", command[4])
-        assertEquals(composeFile, command[5])
-        assertTrue(command.contains("up"))
-        assertTrue(command.contains("-d"))
+        assertEquals("systemctl", command[0])
+        assertEquals("start", command[1])
+        assertEquals(unit, command[2])
     }
 
     @Test
-    fun `docker compose ps command for readiness`() {
+    fun `podman ps command for readiness`() {
         val service = "postgres"
         val command = listOf(
-            "docker",
-            "compose",
+            "podman",
             "ps",
-            service,
+            "--filter",
+            "name=webservices-$service",
             "--format",
-            "{{.Status}}"
+            "{{.Names}} {{.Status}}"
         )
 
         assertTrue(command.contains("ps"))
-        assertTrue(command.contains(service))
+        assertTrue(command.contains("name=webservices-$service"))
         assertTrue(command.contains("--format"))
     }
 
     @Test
     fun `required bundle files list is correct`() {
         val requiredFiles = listOf(
-            "build/docker-compose.yml",
+            "stack.ir.json",
             "build/site/manifest.json",
             "build/build-info.json"
         )
 
         assertEquals(3, requiredFiles.size)
-        assertTrue(requiredFiles.contains("build/docker-compose.yml"))
+        assertTrue(requiredFiles.contains("stack.ir.json"))
         assertTrue(requiredFiles.contains("build/site/manifest.json"))
         assertTrue(requiredFiles.contains("build/build-info.json"))
     }

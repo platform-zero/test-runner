@@ -6,5 +6,4 @@ suspend fun TestRunner.productivityTests() {
     bookStackProductivityTests()
     forgejoProductivityTests()
     plankaProductivityTests()
-    jupyterNotebookProductivityTests()
 }

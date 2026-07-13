@@ -6,17 +6,23 @@ data class DockerCommandResult(
 )
 
 object DockerCli {
+    private const val CONTAINER_CLI_ENV = "TEST_RUNNER_CONTAINER_CLI"
     private const val DOCKER_PROXY_HOST = "tcp://docker-socket-controller-proxy:2375"
     private const val ALLOW_LOCAL_MUTATING_FALLBACK_ENV = "TEST_RUNNER_ALLOW_LOCAL_DOCKER_MUTATIONS"
 
     fun run(vararg args: String): DockerCommandResult {
+        val runtime = containerCli()
+        if (runtime != "docker") {
+            return runWithContainerCli(args.toList(), runtime, null)
+        }
+
         val explicitDockerHost = System.getenv("DOCKER_HOST")
         if (!explicitDockerHost.isNullOrBlank()) {
-            return runWithDockerHost(args.toList(), explicitDockerHost)
+            return runWithContainerCli(args.toList(), runtime, explicitDockerHost)
         }
 
         val commandArgs = args.toList()
-        val proxyAttempt = runWithDockerHost(commandArgs, DOCKER_PROXY_HOST)
+        val proxyAttempt = runWithContainerCli(commandArgs, runtime, DOCKER_PROXY_HOST)
         if (proxyAttempt.exitCode == 0) return proxyAttempt
 
         val outputLower = proxyAttempt.output.lowercase()
@@ -29,11 +35,17 @@ object DockerCli {
             (!isMutatingCommand(commandArgs) || allowMutatingFallback)
 
         return if (canFallbackToLocalDaemon) {
-            runWithDockerHost(commandArgs, null)
+            runWithContainerCli(commandArgs, runtime, null)
         } else {
             proxyAttempt
         }
     }
+
+    private fun containerCli(): String =
+        System.getenv(CONTAINER_CLI_ENV)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "docker"
 
     private fun allowLocalMutatingFallback(): Boolean =
         when (System.getenv(ALLOW_LOCAL_MUTATING_FALLBACK_ENV)?.trim()?.lowercase()) {
@@ -72,10 +84,10 @@ object DockerCli {
         return false
     }
 
-    private fun runWithDockerHost(args: List<String>, dockerHost: String?): DockerCommandResult {
-        val command = listOf("docker") + args
+    private fun runWithContainerCli(args: List<String>, runtime: String, dockerHost: String?): DockerCommandResult {
+        val command = listOf(runtime) + args
         val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
-        if (!dockerHost.isNullOrBlank()) {
+        if (runtime == "docker" && !dockerHost.isNullOrBlank()) {
             processBuilder.environment()["DOCKER_HOST"] = dockerHost
         }
         val process = processBuilder.start()

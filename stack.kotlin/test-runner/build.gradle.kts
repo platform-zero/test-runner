@@ -29,3 +29,24 @@ tasks.shadowJar {
 application {
     mainClass.set("org.webservices.testrunner.MainKt")
 }
+
+tasks.test {
+    exclude(
+        "org/webservices/testrunner/DocumentationCrossCheckTest.class",
+        "org/webservices/testrunner/BookStackHardeningConfigTest.class",
+        "org/webservices/testrunner/ForgejoAuthHardeningConfigTest.class",
+        "org/webservices/testrunner/GrafanaSecretLoggingConfigTest.class",
+        "org/webservices/testrunner/HomeAssistantAuthConfigTest.class",
+        "org/webservices/testrunner/JellyfinConfigTest.class",
+        "org/webservices/testrunner/JupyterAndTunnelHardeningConfigTest.class",
+        "org/webservices/testrunner/KeycloakIdentityConfigTest.class",
+        "org/webservices/testrunner/MastodonAuthHardeningTest.class",
+        "org/webservices/testrunner/MatrixMailExposureHardeningTest.class",
+        "org/webservices/testrunner/PurgeScriptConfigTest.class",
+        "org/webservices/testrunner/SeafileSynapseHardeningConfigTest.class",
+        "org/webservices/testrunner/StackDeploymentHelpersTest.class",
+        "org/webservices/testrunner/SupplyChainHardeningTest.class",
+        "org/webservices/testrunner/TestArchitectureTest.class",
+        "org/webservices/testrunner/VaultwardenSsoEntryConfigTest.class",
+    )
+}

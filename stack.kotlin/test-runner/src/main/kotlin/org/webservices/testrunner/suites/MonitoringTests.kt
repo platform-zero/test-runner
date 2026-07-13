@@ -6,7 +6,5 @@ suspend fun TestRunner.monitoringTests() {
     prometheusMonitoringTests()
     grafanaMonitoringTests()
     nodeExporterMonitoringTests()
-    cadvisorMonitoringTests()
-    dozzleMonitoringTests()
     alertmanagerMonitoringTests()
 }

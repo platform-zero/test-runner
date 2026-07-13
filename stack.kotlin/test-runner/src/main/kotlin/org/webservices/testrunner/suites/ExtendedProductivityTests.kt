@@ -4,6 +4,4 @@ import org.webservices.testrunner.framework.TestRunner
 
 suspend fun TestRunner.extendedProductivityTests() {
     onlyofficeExtendedProductivityTests()
-    jupyterHubExtendedProductivityTests()
-    jupyterPipelineIntegrationTests()
 }

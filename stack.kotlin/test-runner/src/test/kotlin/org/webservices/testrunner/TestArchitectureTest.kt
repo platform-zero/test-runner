@@ -58,28 +58,23 @@ class TestArchitectureTest {
     }
 
     @Test
-    fun `docker daemon access is split between read only and controller proxies`() {
+    fun `podman runtime does not expose docker socket proxy services`() {
         val repoRoot = repoRoot()
-        val proxyText = Files.readString(repoRoot.resolve("stack.compose/docker-proxy.yml"))
-        val networksText = Files.readString(repoRoot.resolve("global.settings/networks.yml"))
-        val forgejoRunnerConfig = Files.readString(repoRoot.resolve("stack.config/forgejo-runner/config.yaml"))
-        val forgejoRunnerCompose = Files.readString(repoRoot.resolve("stack.compose/forgejo-runner.yml"))
-        val testRunnerCompose = Files.readString(repoRoot.resolve("stack.compose/test-runners.yml"))
         val agentWorkspaceSuites = Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/suites/AgentWorkspaceSuites.kt"))
+        val retiredDockerRuntimeFiles = listOf(
+            "stack.compose/docker-proxy.yml",
+            "stack.compose/watchtower.yml",
+            "stack.compose/autoheal.yml",
+            "stack.compose/cadvisor.yml",
+            "stack.compose/docker-exporter.yml",
+            "stack.compose/dozzle.yml",
+            "stack.compose/forgejo-runner.yml",
+            "stack.config/forgejo-runner/config.yaml"
+        )
 
-        assertTrue(networksText.contains("docker-controller:\n    driver: bridge\n    internal: true"))
-        assertTrue(networksText.contains("docker-host-lifecycle:\n    driver: bridge\n    internal: true"))
-        assertTrue(proxyText.contains("docker-socket-proxy:\n    image: tecnativa/docker-socket-proxy"))
-        assertTrue(proxyText.contains("docker-socket-controller-proxy:\n    image: tecnativa/docker-socket-proxy"))
-        assertTrue(proxyText.contains("docker-socket-lifecycle-proxy:\n    image: tecnativa/docker-socket-proxy"))
-        assertTrue(proxyText.contains("POST: 0          # Disallow create/start/stop/exec"))
-        assertTrue(proxyText.contains("DELETE: 0        # Disallow removals"))
-        assertTrue(proxyText.contains("EXEC: 0          # Disable container exec"))
-        assertTrue(forgejoRunnerCompose.contains("DOCKER_HOST: tcp://docker-socket-controller-proxy:2375"))
-        assertTrue(forgejoRunnerConfig.contains("network: \"bridge\""))
-        assertTrue(testRunnerCompose.contains("DOCKER_HOST: tcp://docker-socket-controller-proxy:2375"))
-        assertTrue(Files.readString(repoRoot.resolve("stack.compose/watchtower.yml")).contains("DOCKER_HOST: tcp://docker-socket-lifecycle-proxy:2375"))
-        assertTrue(Files.readString(repoRoot.resolve("stack.compose/autoheal.yml")).contains("DOCKER_SOCK: tcp://docker-socket-lifecycle-proxy:2375"))
+        retiredDockerRuntimeFiles.forEach { relativePath ->
+            assertTrue(repoRoot.resolve(relativePath).notExists(), "retired Docker runtime file should not be bundled: $relativePath")
+        }
         assertFalse(agentWorkspaceSuites.contains("/var/run/docker.sock:/var/run/docker.sock"))
     }
 
