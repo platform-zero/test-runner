@@ -85,7 +85,8 @@ object DockerCli {
     }
 
     private fun runWithContainerCli(args: List<String>, runtime: String, dockerHost: String?): DockerCommandResult {
-        val command = listOf(runtime) + args
+        val usePodmanRemote = runtime == "podman" && !System.getenv("CONTAINER_HOST").isNullOrBlank()
+        val command = listOf(runtime) + (if (usePodmanRemote) listOf("--remote") else emptyList()) + args
         val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
         if (runtime == "docker" && !dockerHost.isNullOrBlank()) {
             processBuilder.environment()["DOCKER_HOST"] = dockerHost
