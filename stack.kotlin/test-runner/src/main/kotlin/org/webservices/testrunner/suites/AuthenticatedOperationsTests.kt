@@ -338,6 +338,9 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     }
 
     test("Models gateway: Authenticated browser session can access API") {
+        if (skipUnselectedComponent("inference", "Models gateway backend")) {
+            return@test
+        }
         if (isTestdevProfile()) {
             println("      ✓ Models gateway backend intentionally excluded from testdev profile")
             return@test
@@ -426,6 +429,9 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     
 
     test("Pipeline: Authenticate and access management API") {
+        if (skipUnselectedComponent("pipeline", "Pipeline management API")) {
+            return@test
+        }
         if (isTestdevProfile()) {
             println("      ✓ Pipeline management API intentionally excluded from testdev profile")
             return@test

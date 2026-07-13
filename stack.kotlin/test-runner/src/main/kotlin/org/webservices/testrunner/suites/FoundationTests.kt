@@ -216,6 +216,9 @@ suspend fun TestRunner.foundationTests() = suite("Foundation Tests") {
     }
 
     test("Embedding backend health endpoint responds") {
+        if (skipUnselectedComponent("inference", "Embedding backend")) {
+            return@test
+        }
         if (System.getenv("TESTDEV_SKIP_GPU_INGESTION") == "1") {
             println("      ✓ Embedding backend intentionally excluded from testdev profile")
             return@test
