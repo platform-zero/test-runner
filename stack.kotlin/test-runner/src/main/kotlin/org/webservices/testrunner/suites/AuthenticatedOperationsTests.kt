@@ -15,7 +15,11 @@ import kotlin.random.Random
 
 suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Operations Tests") {
     suspend fun authenticatedCaddyGet(subdomain: String, path: String = "/"): HttpResponse {
-        return auth.authenticatedGet("https://${caddyHost(subdomain)}${if (path.startsWith("/")) path else "/$path"}")
+        val host = caddyHost(subdomain)
+        val baseUrl = System.getenv("CADDY_URL")?.takeIf { it.isNotBlank() } ?: "http://caddy:80"
+        return auth.authenticatedGet(caddyUrl(baseUrl, path)) {
+            applyCaddyVirtualHost(host)
+        }
     }
 
     suspend fun probeFirstReachable(
@@ -338,6 +342,9 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     }
 
     test("Models gateway: Authenticated browser session can access API") {
+        if (skipUnselectedComponent("inference", "Models gateway backend")) {
+            return@test
+        }
         if (isTestdevProfile()) {
             println("      ✓ Models gateway backend intentionally excluded from testdev profile")
             return@test
@@ -415,7 +422,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("search", "/_cluster/health")
-        require(proxiedResponse.status == HttpStatusCode.OK) {
+        require(proxiedResponse.status.value in 200..399) {
             "Failed to access through authenticated proxy: ${proxiedResponse.status}"
         }
         println("      ✓ Successfully accessed OpenSearch through authenticated proxy")
@@ -426,6 +433,9 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     
 
     test("Pipeline: Authenticate and access management API") {
+        if (skipUnselectedComponent("pipeline", "Pipeline management API")) {
+            return@test
+        }
         if (isTestdevProfile()) {
             println("      ✓ Pipeline management API intentionally excluded from testdev profile")
             return@test

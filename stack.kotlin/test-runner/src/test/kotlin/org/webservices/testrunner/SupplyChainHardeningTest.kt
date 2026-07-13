@@ -3,6 +3,7 @@ package org.webservices.testrunner
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import kotlin.io.path.notExists
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -11,32 +12,29 @@ import kotlin.test.assertTrue
 class SupplyChainHardeningTest {
 
     @Test
-    fun `high risk image references are immutable and watchtower cannot update by default`() {
+    fun `high risk image references are immutable and auto update is podman scoped`() {
         val vaultwarden = repoFileText("stack.compose/vaultwarden.yml")
         val volumeInit = repoFileText("global.settings/volume-init.yml")
-        val watchtower = repoFileText("stack.compose/watchtower.yml")
         val caddy = repoFileText("stack.compose/caddy.yml")
         val jellyfin = repoFileText("stack.config/jellyfin/Dockerfile")
         val donetick = repoFileText("stack.compose/donetick.yml")
         val keycloak = repoFileText("stack.containers/keycloak/Dockerfile")
         val keycloakAuthGateway = repoFileText("stack.compose/keycloak-auth-gateway.yml")
         val keycloakListener = repoFileText("stack.kotlin/keycloak-onboarding-listener/build.gradle.kts")
-        val combined = listOf(vaultwarden, volumeInit, watchtower, caddy, jellyfin, donetick, keycloak, keycloakAuthGateway).joinToString("\n")
+        val combined = listOf(vaultwarden, volumeInit, caddy, jellyfin, donetick, keycloak, keycloakAuthGateway).joinToString("\n")
 
         assertFalse(combined.contains(":latest"))
         assertTrue(vaultwarden.contains("image: vaultwarden/server@sha256:"))
         assertTrue(volumeInit.contains("image: alpine@sha256:"))
-        assertTrue(watchtower.contains("image: containrrr/watchtower@sha256:"))
         assertTrue(caddy.contains("image: caddy:2.11.3@sha256:"))
-        assertTrue(jellyfin.contains("FROM jellyfin/jellyfin@sha256:"))
+        assertTrue(jellyfin.contains("FROM docker.io/jellyfin/jellyfin@sha256:"))
         assertTrue(donetick.contains("image: donetick/donetick:v0.1.75@sha256:"))
         assertTrue(keycloak.contains("FROM quay.io/keycloak/keycloak:26.6.2@sha256:"))
         assertTrue(keycloakAuthGateway.contains("image: quay.io/keycloak/keycloak:26.6.2@sha256:"))
         assertTrue(keycloakListener.contains("org.keycloak:keycloak-server-spi:26.6.2"))
 
-        assertTrue(watchtower.contains("WATCHTOWER_LABEL_ENABLE: true"))
-        assertTrue(watchtower.contains("WATCHTOWER_MONITOR_ONLY: \${WATCHTOWER_MONITOR_ONLY:-true}"))
-        assertTrue(watchtower.contains("WATCHTOWER_SCOPE: webservices"))
+        assertTrue(repoRoot().resolve("ops/webservices-auto-update").notExists() || repoFileText("ops/webservices-auto-update").contains("podman auto-update --rollback"))
+        assertTrue(repoRoot().resolve("stack.compose/watchtower.yml").notExists())
     }
 
     @Test
