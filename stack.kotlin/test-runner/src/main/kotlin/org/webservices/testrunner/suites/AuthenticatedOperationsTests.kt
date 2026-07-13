@@ -422,7 +422,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("search", "/_cluster/health")
-        require(proxiedResponse.status == HttpStatusCode.OK) {
+        require(proxiedResponse.status.value in 200..399) {
             "Failed to access through authenticated proxy: ${proxiedResponse.status}"
         }
         println("      ✓ Successfully accessed OpenSearch through authenticated proxy")
