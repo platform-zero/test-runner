@@ -13,6 +13,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.webservices.testrunner.framework.*
 import java.util.Base64
+import java.nio.file.Files
+import java.nio.file.Path
 
 suspend fun TestRunner.ensureInferenceMode(
     mode: String,
@@ -236,13 +238,10 @@ suspend fun TestRunner.foundationTests() = suite("Foundation Tests") {
     }
 
     test("Caddy exports its local CA bundle for dependent services") {
-        val caddyContainer = System.getenv("CADDY_CONTAINER") ?: "caddy"
-        val result = DockerCli.run(
-            "exec", caddyContainer, "sh", "-lc", "test -s /ca/caddy-ca.crt"
-        )
-        require(result.exitCode == 0) {
-            "Caddy did not export a readable local CA bundle at /ca/caddy-ca.crt: ${result.output}"
+        val caPath = Path.of(System.getenv("CADDY_CA_PATH") ?: "/ca/caddy-ca.crt")
+        require(Files.isRegularFile(caPath) && Files.size(caPath) > 0L) {
+            "Caddy CA bundle is not mounted or is empty at $caPath"
         }
-        println("      ✓ Caddy exported a readable local CA bundle")
+        println("      ✓ Caddy CA bundle is mounted and readable at $caPath")
     }
 }
