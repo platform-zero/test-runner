@@ -7,11 +7,15 @@ data class DockerCommandResult(
 
 object DockerCli {
     private const val CONTAINER_CLI_ENV = "TEST_RUNNER_CONTAINER_CLI"
-    private const val DOCKER_PROXY_HOST = "tcp://docker-socket-controller-proxy:2375"
+    private const val DEFAULT_PODMAN_HOST = "unix:///run/podman/podman.sock"
     private const val ALLOW_LOCAL_MUTATING_FALLBACK_ENV = "TEST_RUNNER_ALLOW_LOCAL_DOCKER_MUTATIONS"
 
     fun run(vararg args: String): DockerCommandResult {
         val runtime = containerCli()
+        if (runtime == "podman") {
+            return runWithContainerCli(args.toList(), runtime, System.getenv("CONTAINER_HOST") ?: DEFAULT_PODMAN_HOST)
+        }
+
         if (runtime != "docker") {
             return runWithContainerCli(args.toList(), runtime, null)
         }
@@ -21,23 +25,13 @@ object DockerCli {
             return runWithContainerCli(args.toList(), runtime, explicitDockerHost)
         }
 
-        val commandArgs = args.toList()
-        val proxyAttempt = runWithContainerCli(commandArgs, runtime, DOCKER_PROXY_HOST)
-        if (proxyAttempt.exitCode == 0) return proxyAttempt
-
-        val outputLower = proxyAttempt.output.lowercase()
-        val proxyUnavailable = outputLower.contains("no such host") ||
-            outputLower.contains("lookup docker-socket-controller-proxy") ||
-            outputLower.contains("name or service not known")
-
-        val allowMutatingFallback = allowLocalMutatingFallback()
-        val canFallbackToLocalDaemon = proxyUnavailable &&
-            (!isMutatingCommand(commandArgs) || allowMutatingFallback)
-
-        return if (canFallbackToLocalDaemon) {
-            runWithContainerCli(commandArgs, runtime, null)
+        return if (!isMutatingCommand(args.toList()) || allowLocalMutatingFallback()) {
+            runWithContainerCli(args.toList(), runtime, null)
         } else {
-            proxyAttempt
+            DockerCommandResult(
+                exitCode = 2,
+                output = "Refusing mutating Docker command without explicit DOCKER_HOST or $ALLOW_LOCAL_MUTATING_FALLBACK_ENV"
+            )
         }
     }
 
@@ -45,7 +39,7 @@ object DockerCli {
         System.getenv(CONTAINER_CLI_ENV)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-            ?: "docker"
+            ?: "podman"
 
     private fun allowLocalMutatingFallback(): Boolean =
         when (System.getenv(ALLOW_LOCAL_MUTATING_FALLBACK_ENV)?.trim()?.lowercase()) {
@@ -84,12 +78,15 @@ object DockerCli {
         return false
     }
 
-    private fun runWithContainerCli(args: List<String>, runtime: String, dockerHost: String?): DockerCommandResult {
-        val usePodmanRemote = runtime == "podman" && !System.getenv("CONTAINER_HOST").isNullOrBlank()
+    private fun runWithContainerCli(args: List<String>, runtime: String, host: String?): DockerCommandResult {
+        val usePodmanRemote = runtime == "podman" && !host.isNullOrBlank()
         val command = listOf(runtime) + (if (usePodmanRemote) listOf("--remote") else emptyList()) + args
         val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
-        if (runtime == "docker" && !dockerHost.isNullOrBlank()) {
-            processBuilder.environment()["DOCKER_HOST"] = dockerHost
+        if (runtime == "docker" && !host.isNullOrBlank()) {
+            processBuilder.environment()["DOCKER_HOST"] = host
+        }
+        if (runtime == "podman" && !host.isNullOrBlank()) {
+            processBuilder.environment()["CONTAINER_HOST"] = host
         }
         return try {
             val process = processBuilder.start()

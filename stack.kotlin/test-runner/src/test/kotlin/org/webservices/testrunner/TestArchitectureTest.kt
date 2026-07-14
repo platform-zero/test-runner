@@ -52,7 +52,13 @@ class TestArchitectureTest {
         assertTrue(composeText.contains("MODEL_CONTEXT_OIDC_REDIRECT_URI: \${MODEL_CONTEXT_OIDC_REDIRECT_URI:-http://test-runner-managed/callback}"))
         assertTrue(text.contains("resolve_test_runner_runtime_host_dir"))
         assertTrue(text.contains("resolve_test_runner_systemd_runtime_host_dir"))
+        assertTrue(text.contains("TEST_RUNNER_CONTAINER_CLI=\"\${TEST_RUNNER_CONTAINER_CLI:-podman}\""))
+        assertTrue(text.contains("CONTAINER_HOST=\"unix:///run/podman/podman.sock\""))
+        assertTrue(composeText.contains("TEST_RUNNER_CONTAINER_CLI: podman"))
+        assertTrue(composeText.contains("CONTAINER_HOST: unix:///run/podman/podman.sock"))
         assertFalse(composeText.contains("\${TEST_RESULTS_HOST_DIR:-./test-results}"))
+        assertFalse(composeText.contains("docker-socket-controller-proxy"))
+        assertFalse(composeText.contains("docker-controller"))
         assertFalse(text.contains("suite_service()"))
         assertFalse(text.contains("test-playwright-e2e"))
     }
@@ -283,7 +289,7 @@ class TestArchitectureTest {
         val dockerfileText = Files.readString(repoRoot().resolve("stack.containers/test-runner/Dockerfile"))
         val entrypointText = Files.readString(repoRoot().resolve("stack.containers/test-runner/container-entrypoint.sh"))
 
-        assertTrue(dockerfileText.contains("usermod -aG docker pwuser"))
+        assertTrue(dockerfileText.contains("usermod -aG docker,root pwuser"))
         assertTrue(dockerfileText.contains("USER pwuser"))
         assertTrue(dockerfileText.contains("COPY stack.containers/test-runner/fixtures/aider-runtime /app/stack.containers/test-runner/fixtures/aider-runtime"))
         assertFalse(dockerfileText.contains("COPY stack.containers/test-runner/fixtures/codex-runtime /app/stack.containers/test-runner/fixtures/codex-runtime"))

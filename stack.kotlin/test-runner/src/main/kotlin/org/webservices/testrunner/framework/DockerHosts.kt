@@ -7,18 +7,16 @@ fun isolatedDockerHostFromEnv(): String {
         return explicitHost
     }
 
-    if (System.getenv("TEST_RUNNER_CONTAINER_CLI")?.trim() == "podman") {
-        return System.getenv("CONTAINER_HOST").orEmpty()
+    val runtime = System.getenv("TEST_RUNNER_CONTAINER_CLI")?.trim().orEmpty().ifBlank { "podman" }
+    if (runtime == "podman") {
+        return System.getenv("CONTAINER_HOST")?.takeIf { it.isNotBlank() } ?: "unix:///run/podman/podman.sock"
     }
 
     val dockerHost = System.getenv("DOCKER_HOST")
     val lowerDockerHost = dockerHost.orEmpty().lowercase()
-    val hostProxy = lowerDockerHost.contains("docker-socket-proxy") ||
-        lowerDockerHost.contains("docker-socket-controller-proxy") ||
-        lowerDockerHost.contains("docker-proxy:2375")
-    if (!dockerHost.isNullOrBlank() && !hostProxy) {
+    if (!dockerHost.isNullOrBlank()) {
         return dockerHost
     }
 
-    return "tcp://docker-socket-controller-proxy:2375"
+    return ""
 }

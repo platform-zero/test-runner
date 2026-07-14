@@ -127,7 +127,7 @@ private fun recoveryRunId(): String =
     UUID.randomUUID().toString().replace("-", "").take(12)
 
 private fun containerCli(): String =
-    System.getenv("TEST_RUNNER_CONTAINER_CLI").orEmpty().ifBlank { "docker" }
+    System.getenv("TEST_RUNNER_CONTAINER_CLI").orEmpty().ifBlank { "podman" }
 
 private fun runRecoveryShell(script: String) {
     val process = ProcessBuilder("bash", "-lc", script)
