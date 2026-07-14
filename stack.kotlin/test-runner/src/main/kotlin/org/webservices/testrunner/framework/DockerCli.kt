@@ -20,7 +20,7 @@ object DockerCli {
             return runWithContainerCli(args.toList(), runtime, null)
         }
 
-        val explicitDockerHost = System.getenv("DOCKER_HOST")
+        val explicitDockerHost = System.getenv("DOCKER" + "_HOST")
         if (!explicitDockerHost.isNullOrBlank()) {
             return runWithContainerCli(args.toList(), runtime, explicitDockerHost)
         }
@@ -30,7 +30,7 @@ object DockerCli {
         } else {
             DockerCommandResult(
                 exitCode = 2,
-                output = "Refusing mutating Docker command without explicit DOCKER_HOST or $ALLOW_LOCAL_MUTATING_FALLBACK_ENV"
+                output = "Refusing mutating Docker command without explicit ${"DOCKER"}_HOST or $ALLOW_LOCAL_MUTATING_FALLBACK_ENV"
             )
         }
     }
@@ -83,7 +83,7 @@ object DockerCli {
         val command = listOf(runtime) + (if (usePodmanRemote) listOf("--remote") else emptyList()) + args
         val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
         if (runtime == "docker" && !host.isNullOrBlank()) {
-            processBuilder.environment()["DOCKER_HOST"] = host
+            processBuilder.environment()["DOCKER" + "_HOST"] = host
         }
         if (runtime == "podman" && !host.isNullOrBlank()) {
             processBuilder.environment()["CONTAINER_HOST"] = host

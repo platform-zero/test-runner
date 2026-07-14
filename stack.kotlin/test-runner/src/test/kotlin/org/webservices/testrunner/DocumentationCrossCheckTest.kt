@@ -13,7 +13,7 @@ class DocumentationCrossCheckTest {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
         val keycloakConfigure = repoFileText("stack.config/keycloak/configure-runtime.sh")
 
-        assertFalse(doc.contains("SOGo | Retired"), "SOGo is restored in stack.compose/sogo.yml and must not be documented as retired")
+        assertFalse(doc.contains("SOGo | Retired"), "SOGo is restored in stack.runtime.yaml and must not be documented as retired")
         assertTrue(doc.contains("SOGo | Restored as Keycloak-backed groupware"))
         assertTrue(doc.contains("Jellyfin | App SSO with Keycloak group authorization"))
         assertTrue(doc.contains("Donetick | Keycloak edge-auth and app OAuth2 client wiring"))

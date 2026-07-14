@@ -101,7 +101,7 @@ class StackDeploymentHelpersTest {
 
     @Test
     fun `forgejo runner ssh mount uses dedicated render-managed host directory`() {
-        val compose = Files.readString(repoFile("stack.compose/forgejo-runner.yml"))
+        val compose = Files.readString(repoFile("stack.runtime.yaml"))
         val renderValues = Files.readString(repoFile("scripts/lib/render-values.sh"))
         val renderRuntime = Files.readString(repoFile("scripts/deploy/render-runtime.sh"))
 
@@ -133,7 +133,7 @@ class StackDeploymentHelpersTest {
 
     @Test
     fun `mastodon stack targets postgres ssd across all roles`() {
-        val mastodonCompose = Files.readString(repoFile("stack.compose/mastodon.yml"))
+        val mastodonCompose = Files.readString(repoFile("stack.runtime.yaml"))
         val mastodonEnv = Files.readString(repoFile("stack.config/mastodon/mastodon.env"))
 
         assertTrue(

@@ -19,7 +19,7 @@ class JupyterAndTunnelHardeningConfigTest {
     }
 
     fun `jupyterhub does not inject shared production secrets into user notebooks`() {
-        val compose = repoFileText("stack.compose/jupyterhub.yml")
+        val compose = repoFileText("stack.runtime.yaml")
         val config = repoFileText("stack.config/jupyterhub/jupyterhub_config.py")
         val startup = repoFileText("stack.containers/jupyter-notebook/startup-config.sh")
 

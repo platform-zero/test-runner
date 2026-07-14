@@ -193,7 +193,7 @@ data class ServiceEndpoints(
          * port mappings (e.g., `http://localhost:18091`). This is used when tests run
          * outside the Docker stack, typically during local development.
          *
-         * Port mappings are defined in docker-compose.yml and allow external access to
+         * Port mappings are defined in the runtime contract and allow external access to
          * containerized services for debugging and development workflows.
          *
          * @return ServiceEndpoints configured for localhost port-mapped access

@@ -23,7 +23,7 @@ class SeafileSynapseHardeningConfigTest {
         val runtimeEntrypoint = repoFileText("stack.config/seafile/runtime-entrypoint.sh")
         val seahubSettings = repoFileText("stack.config/seafile/seahub_settings.py")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val seafileCompose = repoFileText("stack.compose/seafile.yml")
+        val seafileCompose = repoFileText("stack.runtime.yaml")
         val volumes = repoFileText("global.settings/volumes.yml")
         val deploy = repoFileText("scripts/deploy.sh")
 

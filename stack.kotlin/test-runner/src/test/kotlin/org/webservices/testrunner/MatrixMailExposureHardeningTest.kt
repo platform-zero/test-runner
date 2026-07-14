@@ -102,8 +102,8 @@ class MatrixMailExposureHardeningTest {
     @Test
     fun `MatrixRTC backend routes are internal LiveKit only`() {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val caddyCompose = repoFileText("stack.compose/caddy.yml")
-        val compose = repoFileText("stack.compose/livekit.yml")
+        val caddyCompose = repoFileText("stack.runtime.yaml")
+        val compose = repoFileText("stack.runtime.yaml")
         val livekitConfig = repoFileText("stack.config/livekit/livekit.yaml")
         val domainToken = "{${'$'}DOMAIN}"
         val matrixRtcBlock = siteBlock(caddyfile, "matrix-rtc.$domainToken")
@@ -151,7 +151,7 @@ class MatrixMailExposureHardeningTest {
 
     @Test
     fun `Synapse main service runs non-root with container hardening`() {
-        val compose = repoFileText("stack.compose/synapse.yml")
+        val compose = repoFileText("stack.runtime.yaml")
         val synapseService = serviceBlock(compose, "synapse")
 
         assertTrue(compose.contains("synapse-permissions:"))
@@ -166,7 +166,7 @@ class MatrixMailExposureHardeningTest {
 
     @Test
     fun `mailserver does not publish plaintext IMAP and requires TLS for authentication`() {
-        val compose = repoFileText("stack.compose/mailserver.yml")
+        val compose = repoFileText("stack.runtime.yaml")
         val entrypoint = repoFileText("stack.config/mailserver/entrypoint-wrapper.sh")
 
         assertFalse(compose.contains("\"143:143\""))

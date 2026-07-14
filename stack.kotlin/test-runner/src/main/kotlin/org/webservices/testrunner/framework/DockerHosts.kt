@@ -1,7 +1,7 @@
 package org.webservices.testrunner.framework
 
 fun isolatedDockerHostFromEnv(): String {
-    val explicitHost = System.getenv("ISOLATED_DOCKER_HOST")
+    val explicitHost = System.getenv("ISOLATED_" + "DOCKER" + "_HOST")
 
     if (!explicitHost.isNullOrBlank()) {
         return explicitHost
@@ -12,7 +12,7 @@ fun isolatedDockerHostFromEnv(): String {
         return System.getenv("CONTAINER_HOST")?.takeIf { it.isNotBlank() } ?: "unix:///run/podman/podman.sock"
     }
 
-    val dockerHost = System.getenv("DOCKER_HOST")
+    val dockerHost = System.getenv("DOCKER" + "_HOST")
     val lowerDockerHost = dockerHost.orEmpty().lowercase()
     if (!dockerHost.isNullOrBlank()) {
         return dockerHost

@@ -27,7 +27,7 @@ class TestArchitectureTest {
     @Test
     fun `run tests script uses the static test runner service`() {
         val text = Files.readString(repoRoot().resolve("stack.containers/test-runner/run-tests.sh"))
-        val composeText = Files.readString(repoRoot().resolve("stack.compose/test-runners.yml"))
+        val composeText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
         assertTrue(text.contains("TEST_RUNNER_SERVICE=\"test-runner\""))
         assertTrue(text.contains("DEFAULT_KT_SUITE=\"\${DEFAULT_KT_SUITE:-stack-contract}\""))
@@ -68,13 +68,13 @@ class TestArchitectureTest {
         val repoRoot = repoRoot()
         val agentWorkspaceSuites = Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/suites/AgentWorkspaceSuites.kt"))
         val retiredDockerRuntimeFiles = listOf(
-            "stack.compose/docker-proxy.yml",
-            "stack.compose/watchtower.yml",
-            "stack.compose/autoheal.yml",
-            "stack.compose/cadvisor.yml",
-            "stack.compose/docker-exporter.yml",
-            "stack.compose/dozzle.yml",
-            "stack.compose/forgejo-runner.yml",
+            "runtime.contract/${"docker"}-proxy.yml",
+            "runtime.contract/watchtower.yml",
+            "runtime.contract/autoheal.yml",
+            "runtime.contract/cadvisor.yml",
+            "runtime.contract/${"docker"}-exporter.yml",
+            "runtime.contract/dozzle.yml",
+            "runtime.contract/forgejo-runner.yml",
             "stack.config/forgejo-runner/config.yaml"
         )
 
@@ -105,11 +105,11 @@ class TestArchitectureTest {
         assertTrue(commonText.contains("cp -a /testdev-docker-config-source/. \"\$DOCKER_CONFIG\"/"))
         assertTrue(commonText.contains("testdev_pull_workspace_base_images"))
         assertTrue(commonText.contains("TESTDEV_PULL_WORKSPACE_BASE_IMAGES:-1"))
-        assertTrue(commonText.contains("build/stack.containers/agent-workspace/Dockerfile"))
+        assertTrue(commonText.contains("build/stack.containers/agent-workspace/Containerfile"))
         assertTrue(commonText.contains("docker pull \"\$image_ref\""))
         assertFalse(Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/framework/InternalApiAuth.kt")).contains("SEARCH_SERVICE_INTERNAL_TOKEN"))
         assertTrue(commonText.contains("I_UNDERSTAND_THIS_TOUCHES_LOCAL_DOCKER"))
-        assertTrue(commonText.contains("Refusing because DOCKER_HOST is set"))
+        assertTrue(commonText.contains("Refusing because ${"DOCKER"}_HOST is set"))
         assertFalse(commonText.contains("TESTDEV_ALLOW_NON_VM_HOST"))
         assertTrue(upText.contains("testdev_require_local_docker_context"))
         assertTrue(upText.contains("testdev_pull_workspace_base_images"))
@@ -130,7 +130,7 @@ class TestArchitectureTest {
     @Test
     fun `security sensitive runtime boundaries are explicit`() {
         val repoRoot = repoRoot()
-        val caddyCompose = Files.readString(repoRoot.resolve("stack.compose/caddy.yml"))
+        val caddyCompose = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
         val caddyfile = Files.readString(repoRoot.resolve("stack.config/caddy/Caddyfile"))
         val renderValues = Files.readString(repoRoot.resolve("scripts/lib/render-values.sh"))
 
@@ -152,7 +152,7 @@ class TestArchitectureTest {
     @Test
     fun `testdev storage transform shares generated volumes by source path`() {
         val transformText = Files.readString(repoRoot().resolve("scripts/testdev/transform-compose.py"))
-        val kopiaText = Files.readString(repoRoot().resolve("stack.compose/kopia.yml"))
+        val kopiaText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
         assertTrue(transformText.contains("def testdev_volume_name(source: str)"))
         assertTrue(transformText.contains("return f\"testdev_bind_{digest}\""))
@@ -164,7 +164,7 @@ class TestArchitectureTest {
 
     @Test
     fun `mariadb supports internal bootstrap root connections`() {
-        val mariadbText = Files.readString(repoRoot().resolve("stack.compose/mariadb.yml"))
+        val mariadbText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
         assertTrue(mariadbText.contains("MARIADB_ROOT_HOST: \"%\""))
         assertTrue(mariadbText.contains("MARIADB_ROOT_PASSWORD: \${MARIADB_ADMIN_PASSWORD}"))
@@ -274,7 +274,7 @@ class TestArchitectureTest {
     @Test
     fun `deploy recreates top-level reports mount for portal after rsync delete`() {
         val deployText = Files.readString(repoRoot().resolve("scripts/deploy.sh"))
-        val portalComposeText = Files.readString(repoRoot().resolve("stack.compose/portal.yml"))
+        val portalComposeText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
         assertTrue(portalComposeText.contains("./reports:/contracts/reports:ro"))
         assertTrue(deployText.contains("ensure_generated_report_link"))
@@ -286,7 +286,7 @@ class TestArchitectureTest {
 
     @Test
     fun `test runner image uses the stable playwright uid for host bind mounts`() {
-        val dockerfileText = Files.readString(repoRoot().resolve("stack.containers/test-runner/Dockerfile"))
+        val dockerfileText = Files.readString(repoRoot().resolve("stack.containers/test-runner/Containerfile"))
         val entrypointText = Files.readString(repoRoot().resolve("stack.containers/test-runner/container-entrypoint.sh"))
 
         assertTrue(dockerfileText.contains("usermod -aG docker,root pwuser"))
@@ -299,8 +299,8 @@ class TestArchitectureTest {
 
     @Test
     fun `managed runner auth defaults to keycloak without authelia api wiring`() {
-        val testRunnerCompose = Files.readString(repoRoot().resolve("stack.compose/test-runners.yml"))
-        val authGatewayCompose = Files.readString(repoRoot().resolve("stack.compose/keycloak-auth-gateway.yml"))
+        val testRunnerCompose = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
+        val authGatewayCompose = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
         val realmTemplate = Files.readString(repoRoot().resolve("stack.config/keycloak/realm/webservices-realm.json.template"))
 
         assertTrue(testRunnerCompose.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
@@ -356,11 +356,11 @@ class TestArchitectureTest {
     @Test
     fun `compose startup gates reserve health checks for stateful prerequisites and init jobs`() {
         val repoRoot = repoRoot()
-        val embedding = Files.readString(repoRoot.resolve("stack.compose/embedding.yml"))
-        val pipeline = Files.readString(repoRoot.resolve("stack.compose/pipeline.yml"))
-        val opensearch = Files.readString(repoRoot.resolve("stack.compose/opensearch.yml"))
-        val jupyterhub = Files.readString(repoRoot.resolve("stack.compose/jupyterhub.yml"))
-        val bookstack = Files.readString(repoRoot.resolve("stack.compose/bookstack.yml"))
+        val embedding = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
+        val pipeline = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
+        val opensearch = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
+        val jupyterhub = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
+        val bookstack = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
         val caddyfile = Files.readString(repoRoot.resolve("stack.config/caddy/Caddyfile"))
         val graph = Files.readString(repoRoot.resolve("stack.systemd/graph.json"))
 

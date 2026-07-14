@@ -13,17 +13,17 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `keycloak service is a default core identity service`() {
-        val compose = repoFileText("stack.compose/keycloak.yml")
+        val compose = repoFileText("stack.runtime.yaml")
         val graph = repoFileText("stack.systemd/graph.json")
-        val caddyCompose = repoFileText("stack.compose/caddy.yml")
+        val caddyCompose = repoFileText("stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
         val hosts = repoFileText("stack.containers/test-runner/fixtures/caddy-hosts.txt")
-        val authGateway = repoFileText("stack.compose/keycloak-auth-gateway.yml")
+        val authGateway = repoFileText("stack.runtime.yaml")
         val configureRuntime = repoFileText("stack.config/keycloak/configure-runtime.sh")
 
         assertTrue(compose.contains("keycloak-bootstrap:"))
         assertTrue(compose.contains("image: webservices/keycloak:local-build"))
-        assertTrue(compose.contains("dockerfile: ./stack.containers/keycloak/Dockerfile"))
+        assertTrue(compose.contains("containerfile: ./stack.containers/keycloak/Containerfile"))
         assertTrue(compose.contains("restart: \"no\""))
         assertTrue(compose.contains("condition: service_completed_successfully"))
         assertTrue(compose.contains("KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak"))
@@ -110,9 +110,9 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `onboarding is authenticated and event marker driven`() {
-        val onboardingCompose = repoFileText("stack.compose/onboarding.yml")
+        val onboardingCompose = repoFileText("stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val dockerfile = repoFileText("stack.containers/keycloak/Dockerfile")
+        val dockerfile = repoFileText("stack.containers/keycloak/Containerfile")
         val listenerFactory = repoFileText("stack.kotlin/keycloak-onboarding-listener/src/main/java/org/webservices/keycloak/onboarding/OnboardingMarkerEventListenerProviderFactory.java")
         val listener = repoFileText("stack.kotlin/keycloak-onboarding-listener/src/main/java/org/webservices/keycloak/onboarding/OnboardingMarkerEventListenerProvider.java")
         val onboardingService = repoFileText("stack.containers/onboarding-service/onboarding_service.py")
@@ -142,7 +142,7 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `postgres keycloak database bootstrap supports fresh and existing deployments`() {
-        val postgresCompose = repoFileText("stack.compose/postgres.yml")
+        val postgresCompose = repoFileText("stack.runtime.yaml")
         val initDb = repoFileText("stack.config/postgres/init-db.sh")
         val ensureDb = repoFileText("stack.config/postgres/ensure-keycloak-db.sh")
 
@@ -170,15 +170,15 @@ class KeycloakIdentityConfigTest {
     fun `retired directory runtime services are removed while Keycloak backed groupware is restored`() {
         val root = repoRoot()
         val graph = repoFileText("stack.systemd/graph.json")
-        val caddyCompose = repoFileText("stack.compose/caddy.yml")
+        val caddyCompose = repoFileText("stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val sogoCompose = repoFileText("stack.compose/sogo.yml")
-        val mailserverCompose = repoFileText("stack.compose/mailserver.yml")
-        val homeassistantCompose = repoFileText("stack.compose/homeassistant.yml")
-        val testRunnerCompose = repoFileText("stack.compose/test-runners.yml")
+        val sogoCompose = repoFileText("stack.runtime.yaml")
+        val mailserverCompose = repoFileText("stack.runtime.yaml")
+        val homeassistantCompose = repoFileText("stack.runtime.yaml")
+        val testRunnerCompose = repoFileText("stack.runtime.yaml")
         val networkSettings = repoFileText("global.settings/networks.yml")
 
-        assertFalse(Files.exists(root.resolve("stack.compose/$retiredDirectoryId.yml")))
+        assertFalse(Files.exists(root.resolve("runtime.contract/$retiredDirectoryId.yml")))
         assertFalse(Files.exists(root.resolve("stack.config/homeassistant/auth_${retiredDirectoryId}.py")))
         assertFalse(Files.exists(root.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/framework/${retiredDirectoryId.replaceFirstChar { it.uppercase() }}Helper.kt")))
 
@@ -200,7 +200,7 @@ class KeycloakIdentityConfigTest {
     @Test
     fun `service routes enforce keycloak group rbac at the edge`() {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val donetickCompose = repoFileText("stack.compose/donetick.yml")
+        val donetickCompose = repoFileText("stack.runtime.yaml")
         val erpnextBootstrap = repoFileText("stack.config/erpnext/bootstrap-site.sh")
 
         assertTrue(caddyfile.contains("Jellyfin password login is disabled; use Keycloak SSO"))

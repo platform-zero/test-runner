@@ -13,13 +13,13 @@ class SupplyChainHardeningTest {
 
     @Test
     fun `high risk image references are immutable and auto update is podman scoped`() {
-        val vaultwarden = repoFileText("stack.compose/vaultwarden.yml")
+        val vaultwarden = repoFileText("stack.runtime.yaml")
         val volumeInit = repoFileText("global.settings/volume-init.yml")
-        val caddy = repoFileText("stack.compose/caddy.yml")
-        val jellyfin = repoFileText("stack.config/jellyfin/Dockerfile")
-        val donetick = repoFileText("stack.compose/donetick.yml")
-        val keycloak = repoFileText("stack.containers/keycloak/Dockerfile")
-        val keycloakAuthGateway = repoFileText("stack.compose/keycloak-auth-gateway.yml")
+        val caddy = repoFileText("stack.runtime.yaml")
+        val jellyfin = repoFileText("stack.config/jellyfin/Containerfile")
+        val donetick = repoFileText("stack.runtime.yaml")
+        val keycloak = repoFileText("stack.containers/keycloak/Containerfile")
+        val keycloakAuthGateway = repoFileText("stack.runtime.yaml")
         val keycloakListener = repoFileText("stack.kotlin/keycloak-onboarding-listener/build.gradle.kts")
         val combined = listOf(vaultwarden, volumeInit, caddy, jellyfin, donetick, keycloak, keycloakAuthGateway).joinToString("\n")
 
@@ -34,7 +34,7 @@ class SupplyChainHardeningTest {
         assertTrue(keycloakListener.contains("org.keycloak:keycloak-server-spi:26.6.2"))
 
         assertTrue(repoRoot().resolve("ops/webservices-auto-update").notExists() || repoFileText("ops/webservices-auto-update").contains("podman auto-update --rollback"))
-        assertTrue(repoRoot().resolve("stack.compose/watchtower.yml").notExists())
+        assertTrue(repoRoot().resolve("runtime.contract/watchtower.yml").notExists())
     }
 
     @Test
