@@ -44,14 +44,6 @@ object ContainerCli {
         if (top in setOf("build", "run", "start", "stop", "restart", "kill", "rm", "rmi", "pull", "push", "tag")) {
             return true
         }
-        if (top == "compose") {
-            val runtimeCommands = args.drop(1)
-                .map { it.lowercase() }
-                .filterNot { it.startsWith("-") }
-            return runtimeCommands.any {
-                it in setOf("up", "down", "start", "stop", "restart", "kill", "rm", "run", "exec", "build", "pull", "push")
-            }
-        }
         if (top in setOf("container", "image", "network", "volume", "system")) {
             val subCommands = args.drop(1)
                 .map { it.lowercase() }

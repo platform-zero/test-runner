@@ -6,18 +6,18 @@ import kotlin.test.assertTrue
 
 class ContainerCliTest {
     @Test
-    fun `detects top level mutating docker commands`() {
+    fun `detects top level mutating container commands`() {
         assertTrue(ContainerCli.isMutatingCommand(listOf("run", "--rm", "busybox", "echo", "ok")))
         assertTrue(ContainerCli.isMutatingCommand(listOf("rm", "-f", "container-id")))
         assertTrue(ContainerCli.isMutatingCommand(listOf("build", "-t", "stack/test", ".")))
     }
 
     @Test
-    fun `detects compose mutating commands and ignores read only compose queries`() {
-        assertTrue(ContainerCli.isMutatingCommand(listOf("compose", "up", "-d")))
-        assertTrue(ContainerCli.isMutatingCommand(listOf("compose", "--project-name", "webservices", "exec", "app", "sh")))
-        assertFalse(ContainerCli.isMutatingCommand(listOf("compose", "ps")))
-        assertFalse(ContainerCli.isMutatingCommand(listOf("compose", "logs", "--tail", "20", "app")))
+    fun `detects namespaced podman mutating commands`() {
+        assertTrue(ContainerCli.isMutatingCommand(listOf("container", "exec", "app", "sh")))
+        assertTrue(ContainerCli.isMutatingCommand(listOf("network", "connect", "webservices_default", "app")))
+        assertTrue(ContainerCli.isMutatingCommand(listOf("volume", "rm", "stale-volume")))
+        assertFalse(ContainerCli.isMutatingCommand(listOf("network", "ls")))
     }
 
     @Test

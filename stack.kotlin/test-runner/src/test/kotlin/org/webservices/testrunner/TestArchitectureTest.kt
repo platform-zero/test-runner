@@ -25,7 +25,7 @@ class TestArchitectureTest {
     }
 
     @Test
-    fun `run tests script uses the static test runner service`() {
+    fun `run tests script launches deployed tests through rootless podman`() {
         val text = Files.readString(repoRoot().resolve("stack.containers/test-runner/run-tests.sh"))
         val composeText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
@@ -35,13 +35,18 @@ class TestArchitectureTest {
         assertTrue(text.contains("kt-live-ingestion"))
         assertTrue(text.contains("kt-recovery"))
         assertTrue(text.contains("kt-agent-lab"))
-        assertTrue(composeText.contains("TEST_RESULTS_HOST_DIR:?TEST_RESULTS_HOST_DIR must be set by run-tests.sh"))
-        assertTrue(composeText.contains("TEST_RUNNER_RUNTIME_HOST_DIR:?TEST_RUNNER_RUNTIME_HOST_DIR must be set by run-tests.sh"))
-        assertTrue(composeText.contains("TEST_RUNNER_HOST_XDG_RUNTIME_DIR:?TEST_RUNNER_HOST_XDG_RUNTIME_DIR must be set by run-tests.sh"))
+        assertTrue(text.contains("WEBSERVICES_ROOTLESS_USER=\"\${WEBSERVICES_ROOTLESS_USER:-webservices}\""))
+        assertTrue(text.contains("rootless_podman()"))
+        assertTrue(text.contains("podman_run_network_args"))
+        assertTrue(text.contains("run_podman_test_container"))
+        assertTrue(text.contains("CADDY_URL=\${CADDY_URL:-http://host.containers.internal:80}"))
+        assertTrue(text.contains("PLAYWRIGHT_IGNORE_HTTPS_ERRORS=\${PLAYWRIGHT_IGNORE_HTTPS_ERRORS:-true}"))
+        assertTrue(text.contains("doctor"))
+        assertFalse(text.contains("podman compose"))
+        assertFalse(text.contains("TEST_RUNNER_HOST_XDG_RUNTIME_DIR"))
+        assertFalse(text.contains("CONTAINER_HOST=\"unix:///run/podman/podman.sock\""))
         assertTrue(composeText.contains("TEST_RUNNER_RUNTIME_ROOT: /runtime"))
-        assertTrue(composeText.contains("XDG_RUNTIME_DIR: /host-user-runtime"))
-        assertTrue(composeText.contains("DBUS_SESSION_BUS_ADDRESS: unix:path=/host-user-runtime/bus"))
-        assertTrue(composeText.contains("CADDY_URL: http://caddy:80"))
+        assertTrue(composeText.contains("CADDY_URL: http://host.containers.internal:80"))
         assertFalse(composeText.contains("AUTHELIA_API_URL"))
         assertTrue(composeText.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
         assertTrue(composeText.contains("KEYCLOAK_INTERNAL_URL: \${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}"))
@@ -50,10 +55,6 @@ class TestArchitectureTest {
         assertTrue(composeText.contains("OPENSEARCH_PASSWORD: \${OPENSEARCH_ADMIN_PASSWORD}"))
         assertTrue(composeText.contains("INFERENCE_CONTROLLER_API_TOKEN: \${INFERENCE_CONTROLLER_API_TOKEN}"))
         assertTrue(composeText.contains("MODEL_CONTEXT_OIDC_REDIRECT_URI: \${MODEL_CONTEXT_OIDC_REDIRECT_URI:-http://test-runner-managed/callback}"))
-        assertTrue(text.contains("resolve_test_runner_runtime_host_dir"))
-        assertTrue(text.contains("resolve_test_runner_systemd_runtime_host_dir"))
-        assertTrue(text.contains("TEST_RUNNER_CONTAINER_CLI=\"\${TEST_RUNNER_CONTAINER_CLI:-podman}\""))
-        assertTrue(text.contains("CONTAINER_HOST=\"unix:///run/podman/podman.sock\""))
         assertTrue(composeText.contains("TEST_RUNNER_CONTAINER_CLI: podman"))
         assertTrue(composeText.contains("CONTAINER_HOST: unix:///run/podman/podman.sock"))
         assertFalse(composeText.contains("\${TEST_RESULTS_HOST_DIR:-./test-results}"))
