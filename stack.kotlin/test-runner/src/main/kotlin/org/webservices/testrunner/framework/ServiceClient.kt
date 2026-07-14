@@ -257,7 +257,7 @@ class ServiceClient(
      * This method validates the full agent tool execution chain:
      * 1. HTTP request to model-context-server `/call-tool` endpoint
      * 2. Plugin routing and capability enforcement
-     * 3. Tool execution (e.g., querying PostgreSQL, searching Qdrant, executing Docker commands)
+     * 3. Tool execution (e.g., querying PostgreSQL, searching Qdrant, executing container commands)
      * 4. Response formatting for downstream callers
      *
      * Tests use this to verify that:

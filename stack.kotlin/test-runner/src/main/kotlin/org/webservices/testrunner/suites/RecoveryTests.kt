@@ -9,7 +9,7 @@ suspend fun TestRunner.recoveryTests() = suite("Recovery Drill Tests") {
     test("PostgreSQL logical dump restores into a disposable container") {
         requireTestdevRecoveryContext()
         val runId = recoveryRunId()
-        val project = composeProjectName()
+        val project = runtimeProjectName()
         val script = """
             set -euo pipefail
             cli=${containerCli().shellQuote()}
@@ -62,7 +62,7 @@ suspend fun TestRunner.recoveryTests() = suite("Recovery Drill Tests") {
     test("MariaDB logical dump restores into a disposable container") {
         requireTestdevRecoveryContext()
         val runId = recoveryRunId()
-        val project = composeProjectName()
+        val project = runtimeProjectName()
         val script = """
             set -euo pipefail
             cli=${containerCli().shellQuote()}
@@ -108,15 +108,15 @@ suspend fun TestRunner.recoveryTests() = suite("Recovery Drill Tests") {
     }
 }
 
-private fun composeProjectName(): String =
-    System.getenv("TEST_RUNNER_COMPOSE_PROJECT_NAME").orEmpty()
-        .ifBlank { System.getenv("COMPOSE_PROJECT_NAME").orEmpty() }
+private fun runtimeProjectName(): String =
+    System.getenv("TEST_RUNNER_RUNTIME_PROJECT_NAME").orEmpty()
+        .ifBlank { System.getenv("RUNTIME_PROJECT_NAME").orEmpty() }
         .ifBlank { "webservices" }
 
 private fun requireTestdevRecoveryContext() {
-    val project = composeProjectName()
+    val project = runtimeProjectName()
     require(project.startsWith("webservices_testdev_")) {
-        "Recovery drills are destructive staging tests and must run under testdev; COMPOSE_PROJECT_NAME=$project"
+        "Recovery drills are destructive staging tests and must run under testdev; RUNTIME_PROJECT_NAME=$project"
     }
     require(System.getenv("TESTDEV_SKIP_GPU_INGESTION") == "1") {
         "Recovery drills must run through testdev-verify.sh so TESTDEV_SKIP_GPU_INGESTION=1 is set"

@@ -68,18 +68,18 @@ class TestArchitectureTest {
         val repoRoot = repoRoot()
         val agentWorkspaceSuites = Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/suites/AgentWorkspaceSuites.kt"))
         val retiredDockerRuntimeFiles = listOf(
-            "runtime.contract/${"docker"}-proxy.yml",
-            "runtime.contract/watchtower.yml",
-            "runtime.contract/autoheal.yml",
-            "runtime.contract/cadvisor.yml",
-            "runtime.contract/${"docker"}-exporter.yml",
-            "runtime.contract/dozzle.yml",
-            "runtime.contract/forgejo-runner.yml",
+            "runtime.overlays/${"docker"}-proxy.yml",
+            "runtime.overlays/watchtower.yml",
+            "runtime.overlays/autoheal.yml",
+            "runtime.overlays/cadvisor.yml",
+            "runtime.overlays/${"docker"}-exporter.yml",
+            "runtime.overlays/dozzle.yml",
+            "runtime.overlays/forgejo-runner.yml",
             "stack.config/forgejo-runner/config.yaml"
         )
 
         retiredDockerRuntimeFiles.forEach { relativePath ->
-            assertTrue(repoRoot.resolve(relativePath).notExists(), "retired Docker runtime file should not be bundled: $relativePath")
+            assertTrue(repoRoot.resolve(relativePath).notExists(), "retired container runtime file should not be bundled: $relativePath")
         }
         assertFalse(agentWorkspaceSuites.contains("/var/run/docker.sock:/var/run/docker.sock"))
     }

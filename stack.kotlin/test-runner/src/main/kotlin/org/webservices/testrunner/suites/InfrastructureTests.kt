@@ -142,8 +142,8 @@ suspend fun TestRunner.infrastructureTests() = suite("Infrastructure Tests") {
         throw AssertionError("Keycloak OIDC config validation failed: ${lastError?.message}")
     }
 
-    test("retired directory compatibility service is absent from the runtime contract") {
-        val result = DockerCli.run("ps", "--format", "{{.Names}}")
+    test("retired directory compatibility service is absent from the runtime model") {
+        val result = ContainerCli.run("ps", "--format", "{{.Names}}")
         require(result.exitCode == 0) {
             "Unable to inspect runtime containers: ${result.output}"
         }

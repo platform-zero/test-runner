@@ -178,7 +178,7 @@ class KeycloakIdentityConfigTest {
         val testRunnerCompose = repoFileText("stack.runtime.yaml")
         val networkSettings = repoFileText("global.settings/networks.yml")
 
-        assertFalse(Files.exists(root.resolve("runtime.contract/$retiredDirectoryId.yml")))
+        assertFalse(Files.exists(root.resolve("runtime.overlays/$retiredDirectoryId.yml")))
         assertFalse(Files.exists(root.resolve("stack.config/homeassistant/auth_${retiredDirectoryId}.py")))
         assertFalse(Files.exists(root.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/framework/${retiredDirectoryId.replaceFirstChar { it.uppercase() }}Helper.kt")))
 

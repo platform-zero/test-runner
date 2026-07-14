@@ -34,7 +34,7 @@ class SupplyChainHardeningTest {
         assertTrue(keycloakListener.contains("org.keycloak:keycloak-server-spi:26.6.2"))
 
         assertTrue(repoRoot().resolve("ops/webservices-auto-update").notExists() || repoFileText("ops/webservices-auto-update").contains("podman auto-update --rollback"))
-        assertTrue(repoRoot().resolve("runtime.contract/watchtower.yml").notExists())
+        assertTrue(repoRoot().resolve("runtime.overlays/watchtower.yml").notExists())
     }
 
     @Test
@@ -190,7 +190,7 @@ class SupplyChainHardeningTest {
                 "--compose-project-name", "webservices",
                 "--systemd-notify-bin", "/usr/bin/systemd-notify",
                 "--compose-helper", "/tmp/webservices/build/scripts/lib/systemd-compose-unit.sh",
-                "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-docker-infra.sh",
+                "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-container-infra.sh",
                 "--diagnostics-helper", "/tmp/webservices/build/scripts/lib/systemd-diagnostics.sh",
                 "--base-networks-json", baseNetworks.toString(),
             )
@@ -236,7 +236,7 @@ class SupplyChainHardeningTest {
                 "--compose-project-name", "webservices",
                 "--systemd-notify-bin", "/usr/bin/systemd-notify",
                 "--compose-helper", "/tmp/webservices/build/scripts/lib/systemd-compose-unit.sh",
-                "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-docker-infra.sh",
+                "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-container-infra.sh",
                 "--diagnostics-helper", "/tmp/webservices/build/scripts/lib/systemd-diagnostics.sh",
                 "--base-networks-json", baseNetworks.toString(),
             )

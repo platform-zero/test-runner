@@ -1,36 +1,27 @@
 package org.webservices.testrunner.framework
 
-data class DockerCommandResult(
+data class ContainerCommandResult(
     val exitCode: Int,
     val output: String
 )
 
-object DockerCli {
+object ContainerCli {
     private const val CONTAINER_CLI_ENV = "TEST_RUNNER_CONTAINER_CLI"
     private const val DEFAULT_PODMAN_HOST = "unix:///run/podman/podman.sock"
-    private const val ALLOW_LOCAL_MUTATING_FALLBACK_ENV = "TEST_RUNNER_ALLOW_LOCAL_DOCKER_MUTATIONS"
+    private const val ALLOW_LOCAL_MUTATING_FALLBACK_ENV = "TEST_RUNNER_ALLOW_LOCAL_CONTAINER_MUTATIONS"
 
-    fun run(vararg args: String): DockerCommandResult {
+    fun run(vararg args: String): ContainerCommandResult {
         val runtime = containerCli()
         if (runtime == "podman") {
             return runWithContainerCli(args.toList(), runtime, System.getenv("CONTAINER_HOST") ?: DEFAULT_PODMAN_HOST)
         }
 
-        if (runtime != "docker") {
-            return runWithContainerCli(args.toList(), runtime, null)
-        }
-
-        val explicitDockerHost = System.getenv("DOCKER" + "_HOST")
-        if (!explicitDockerHost.isNullOrBlank()) {
-            return runWithContainerCli(args.toList(), runtime, explicitDockerHost)
-        }
-
         return if (!isMutatingCommand(args.toList()) || allowLocalMutatingFallback()) {
             runWithContainerCli(args.toList(), runtime, null)
         } else {
-            DockerCommandResult(
+            ContainerCommandResult(
                 exitCode = 2,
-                output = "Refusing mutating Docker command without explicit ${"DOCKER"}_HOST or $ALLOW_LOCAL_MUTATING_FALLBACK_ENV"
+                output = "Refusing mutating container command without explicit isolated runtime host or $ALLOW_LOCAL_MUTATING_FALLBACK_ENV"
             )
         }
     }
@@ -54,10 +45,10 @@ object DockerCli {
             return true
         }
         if (top == "compose") {
-            val composeCommands = args.drop(1)
+            val runtimeCommands = args.drop(1)
                 .map { it.lowercase() }
                 .filterNot { it.startsWith("-") }
-            return composeCommands.any {
+            return runtimeCommands.any {
                 it in setOf("up", "down", "start", "stop", "restart", "kill", "rm", "run", "exec", "build", "pull", "push")
             }
         }
@@ -78,13 +69,10 @@ object DockerCli {
         return false
     }
 
-    private fun runWithContainerCli(args: List<String>, runtime: String, host: String?): DockerCommandResult {
+    private fun runWithContainerCli(args: List<String>, runtime: String, host: String?): ContainerCommandResult {
         val usePodmanRemote = runtime == "podman" && !host.isNullOrBlank()
         val command = listOf(runtime) + (if (usePodmanRemote) listOf("--remote") else emptyList()) + args
         val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
-        if (runtime == "docker" && !host.isNullOrBlank()) {
-            processBuilder.environment()["DOCKER" + "_HOST"] = host
-        }
         if (runtime == "podman" && !host.isNullOrBlank()) {
             processBuilder.environment()["CONTAINER_HOST"] = host
         }
@@ -92,9 +80,9 @@ object DockerCli {
             val process = processBuilder.start()
             val output = process.inputStream.bufferedReader().readText().trim()
             val exitCode = process.waitFor()
-            DockerCommandResult(exitCode = exitCode, output = output)
+            ContainerCommandResult(exitCode = exitCode, output = output)
         } catch (error: java.io.IOException) {
-            DockerCommandResult(
+            ContainerCommandResult(
                 exitCode = 127,
                 output = "Unable to execute container CLI '$runtime': ${error.message.orEmpty()}"
             )

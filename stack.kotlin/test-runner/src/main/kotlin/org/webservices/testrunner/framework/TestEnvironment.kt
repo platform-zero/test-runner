@@ -7,7 +7,7 @@ import java.io.File
  *
  * This data class provides URLs and connection details for all services in the stack,
  * enabling tests to discover and interact with the correct service endpoints based on
- * the runtime environment (Docker container network vs. localhost port-mapped).
+ * the runtime environment (container network vs. localhost port-mapped).
  *
  * ## Cross-Service Integration Testing
  * The endpoints represent the full authentication cascade and data flow:
@@ -110,16 +110,16 @@ data class ServiceEndpoints(
 ) {
     companion object {
         /**
-         * Creates service endpoints from environment variables (Docker container network mode).
+         * Creates service endpoints from environment variables (container network mode).
          *
          * This factory method reads service URLs from environment variables with fallbacks to
-         * internal Docker network hostnames (e.g., `http://model-context-server:8081`). This is
-         * the default configuration when tests run inside the Docker stack.
+         * internal container network hostnames (e.g., `http://model-context-server:8081`). This is
+         * the default configuration when tests run inside the container stack.
          *
          * Tests running in containers can directly access services via Docker's DNS resolution,
          * avoiding the need for port mapping to the host machine.
          *
-         * @return ServiceEndpoints configured for Docker container network access
+         * @return ServiceEndpoints configured for container network access
          */
         fun fromEnvironment(): ServiceEndpoints = ServiceEndpoints(
             modelContextServer = env("MODEL_CONTEXT_SERVER_URL") ?: "http://portal:3000",
@@ -191,9 +191,9 @@ data class ServiceEndpoints(
          *
          * This factory method returns endpoints that connect to services via localhost
          * port mappings (e.g., `http://localhost:18091`). This is used when tests run
-         * outside the Docker stack, typically during local development.
+         * outside the container stack, typically during local development.
          *
-         * Port mappings are defined in the runtime contract and allow external access to
+         * Port mappings are defined in the runtime model and allow external access to
          * containerized services for debugging and development workflows.
          *
          * @return ServiceEndpoints configured for localhost port-mapped access
@@ -288,12 +288,12 @@ data class DatabaseConfig(
  * Runtime environment detection and configuration for test execution.
  *
  * TestEnvironment is the entry point for all integration tests, automatically detecting
- * whether tests are running inside Docker containers or on a localhost developer machine.
+ * whether tests are running inside containers or on a localhost developer machine.
  * This abstraction enables the same test code to run in CI/CD pipelines and local development.
  *
  * ## Environment Detection
  * The framework detects the environment by:
- * 1. Checking for `/.dockerenv` file (Docker container indicator)
+ * 1. Checking for `/.dockerenv` file (container indicator)
  * 2. Reading `TEST_ENV` environment variable
  * 3. Defaulting to localhost mode for developer convenience
  *
@@ -303,7 +303,7 @@ data class DatabaseConfig(
  * - **OAuth secrets**: For OIDC clients managed by Keycloak
  *
  * ## Why Environment Abstraction Matters
- * - **CI/CD**: Tests run inside Docker network without port mapping overhead
+ * - **CI/CD**: Tests run inside container network without port mapping overhead
  * - **Local Development**: Tests run on host machine with port-mapped service access
  * - **Test Isolation**: Each environment has isolated credentials and endpoints
  * - **No Hardcoding**: Service URLs adapt to deployment topology automatically
@@ -334,10 +334,10 @@ sealed interface TestEnvironment {
     val bookstackOAuthSecret: String
 
     /**
-     * Container environment: Tests run inside Docker network with direct service access.
+     * Container environment: Tests run inside container network with direct service access.
      *
      * Used by CI/CD pipelines and when tests are executed as a containerized workload
-     * within the webservices stack. Services are accessed via internal Docker DNS names.
+     * within the webservices stack. Services are accessed via internal container DNS names.
      */
     data object Container : TestEnvironment {
         override val name = "container"

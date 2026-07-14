@@ -14,7 +14,7 @@ import kotlin.system.measureTimeMillis
  * ## Why Probabilistic Testing Matters
  * In distributed systems like webservices:
  * - **External Dependencies**: RSS feeds, CVE databases, Wikipedia may be temporarily unreachable
- * - **Network Latency**: Docker network, DNS resolution, and HTTP requests have variable latency
+ * - **Network Latency**: container network, DNS resolution, and HTTP requests have variable latency
  * - **Resource Contention**: Multiple services competing for CPU, memory, and I/O
  * - **Eventual Consistency**: Vector databases, full-text indexes may lag behind writes
  *
@@ -69,7 +69,7 @@ class ProbabilisticTestRunner(
      *
      * ## Use Cases
      * - **External Data Sources**: RSS feeds, CVE APIs may be temporarily unavailable
-     * - **Network Operations**: Docker DNS, service discovery may have transient failures
+     * - **Network Operations**: container DNS, service discovery may have transient failures
      * - **Race Conditions**: Multi-service workflows may occasionally timeout
      * - **Resource Limits**: System under load may throttle some requests
      *

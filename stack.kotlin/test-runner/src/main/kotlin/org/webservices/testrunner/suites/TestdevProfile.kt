@@ -59,13 +59,13 @@ internal fun skipUnlessAnySelectedComponent(description: String, vararg componen
     return true
 }
 
-internal fun testRunnerComposeProjectName(): String =
-    System.getenv("TEST_RUNNER_COMPOSE_PROJECT_NAME").orEmpty()
-        .ifBlank { System.getenv("COMPOSE_PROJECT_NAME").orEmpty() }
+internal fun testRunnerRuntimeProjectName(): String =
+    System.getenv("TEST_RUNNER_RUNTIME_PROJECT_NAME").orEmpty()
+        .ifBlank { System.getenv("RUNTIME_PROJECT_NAME").orEmpty() }
         .ifBlank { "webservices" }
 
-internal fun composeServiceContainerName(serviceName: String): String {
-    val project = testRunnerComposeProjectName()
+internal fun runtimeServiceContainerName(serviceName: String): String {
+    val project = testRunnerRuntimeProjectName()
     return if (project.startsWith("webservices_testdev_")) {
         "$project-$serviceName-1"
     } else {
