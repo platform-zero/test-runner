@@ -110,7 +110,7 @@ class AuthHelper(
             applyTrustedIdentity()
             protectedVirtualHost?.let { applyCaddyVirtualHost(it) }
         }
-        return response.status.value in 200..399 && response.bodyAsText().contains(username)
+        return response.status == HttpStatusCode.OK && response.bodyAsText().contains(username)
     }
 
     suspend fun loginWithEphemeralUser(groups: List<String> = listOf("users")): AuthResult {

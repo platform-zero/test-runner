@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class TokenManagerTest {
@@ -82,15 +81,6 @@ class TokenManagerTest {
     )
 
     @Test
-    fun `test TokenManager initialization`() {
-        val endpoints = createTestEndpoints()
-        val client = createMockClient(emptyMap())
-        val tokenManager = TokenManager(client, endpoints)
-
-        assertNotNull(tokenManager)
-    }
-
-    @Test
     fun `test token storage and retrieval`() = runBlocking {
         val endpoints = createTestEndpoints()
 
@@ -113,9 +103,7 @@ class TokenManagerTest {
         assertTrue(result.isSuccess)
         assertTrue(tokenManager.hasToken("grafana"))
 
-        val token = tokenManager.getToken("grafana")
-        assertNotNull(token)
-        assertEquals("test-api-key-12345", token)
+        assertEquals("test-api-key-12345", tokenManager.getToken("grafana"))
     }
 
     @Test

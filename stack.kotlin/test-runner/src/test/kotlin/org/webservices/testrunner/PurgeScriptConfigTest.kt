@@ -48,8 +48,7 @@ class PurgeScriptConfigTest {
         assertTrue(purge.contains("EXPECTED_HOSTNAME"))
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()

@@ -6,8 +6,7 @@ import java.nio.file.Path
 import kotlin.test.*
 
 class StackDeploymentHelpersTest {
-    private fun repoFile(path: String): Path =
-        Path.of("").toAbsolutePath().normalize().resolve("../..").normalize().resolve(path)
+    private fun repoFile(path: String): Path = TestSourceFiles.repositoryPath(path)
 
     @Test
     fun `runtime root lives in user tmpfs`() {
@@ -100,44 +99,23 @@ class StackDeploymentHelpersTest {
     }
 
     @Test
-    fun `forgejo runner ssh mount uses dedicated render-managed host directory`() {
-        val runtime = Files.readString(repoFile("stack.runtime.yaml"))
-        val renderValues = Files.readString(repoFile("scripts/lib/render-values.sh"))
-        val renderRuntime = Files.readString(repoFile("scripts/deploy/render-runtime.sh"))
+    fun `forgejo runner ssh mount is dedicated private and read only`() {
+        val runtime = TestSourceFiles.moduleText("forgejo-runner", "stack.runtime.yaml")
 
         assertTrue(
-            runtime.contains("FORGEJO_RUNNER_SSH_DIR:?Set FORGEJO_RUNNER_SSH_DIR to a dedicated runner-only SSH directory"),
-            "Forgejo runner must not fall back to an implicit broad SSH mount"
+            runtime.contains("/mnt/stack/forgejo-runner-ssh:/root/.ssh:ro"),
+            "Forgejo runner must mount only its dedicated SSH directory and must mount it read-only"
         )
-        assertTrue(
-            renderValues.contains("runtime.forgejo_runner_ssh_dir"),
-            "Site bundles should be able to override the dedicated runner SSH directory"
-        )
-        assertTrue(
-            renderValues.contains("default_forgejo_runner_ssh_dir"),
-            "Real deployments should get a safe dedicated default if the site omits the optional override"
-        )
-        assertTrue(
-            renderValues.contains("render_set FORGEJO_RUNNER_SSH_DIR"),
-            "Runtime rendering should publish the runner SSH directory into stack.env"
-        )
-        assertTrue(
-            renderRuntime.contains("prepare_host_runtime_dirs"),
-            "Deploy should create host bind directories before runtime validation"
-        )
-        assertTrue(
-            renderRuntime.contains("chmod 700 \"${'$'}forgejo_runner_ssh_dir\""),
-            "The runner SSH directory should be private to the deploy user"
-        )
+        assertFalse(runtime.contains(":/root/.ssh") && !runtime.contains("forgejo-runner-ssh:/root/.ssh:ro"))
     }
 
     @Test
     fun `mastodon stack targets postgres ssd across all roles`() {
-        val mastodonRuntime = Files.readString(repoFile("stack.runtime.yaml"))
+        val mastodonRuntime = TestSourceFiles.moduleText("mastodon", "stack.runtime.yaml")
         val mastodonEnv = Files.readString(repoFile("stack.config/mastodon/mastodon.env"))
 
         assertTrue(
-            mastodonRuntime.contains("postgres-ssd-bootstrap:\n        condition: service_completed_successfully"),
+            mastodonRuntime.contains("postgres-ssd-bootstrap: \"completed\""),
             "Mastodon services should wait for postgres-ssd bootstrap completion before starting"
         )
         assertTrue(

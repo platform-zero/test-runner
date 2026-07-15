@@ -127,9 +127,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("grafana")
-        require(proxiedResponse.status.value in 200..399) {
-            "Failed to access through authenticated proxy: ${proxiedResponse.status}"
-        }
+        requireOkOrRedirectResponse(proxiedResponse, "Authenticated Grafana proxy")
         println("      ✓ Successfully accessed Grafana through authenticated proxy")
     }
 
@@ -300,9 +298,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
         ensureEdgeSession()
 
         val proxiedResponse = authenticatedCaddyGet("jupyterhub")
-        require(proxiedResponse.status.value in 200..399) {
-            "Failed to access through authenticated proxy: ${proxiedResponse.status}"
-        }
+        requireOkOrRedirectResponse(proxiedResponse, "Authenticated JupyterHub proxy")
         println("      ✓ Successfully accessed JupyterHub through authenticated proxy")
     }
 
@@ -378,9 +374,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("ntfy")
-        require(proxiedResponse.status.value in 200..399) {
-            "Failed to access through authenticated proxy: ${proxiedResponse.status}"
-        }
+        requireOkOrRedirectResponse(proxiedResponse, "Authenticated ntfy proxy")
         println("      ✓ Successfully accessed Ntfy through authenticated proxy")
     }
 
@@ -393,9 +387,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("kopia")
-        require(proxiedResponse.status.value in 200..399) {
-            "Failed to access through authenticated proxy: ${proxiedResponse.status}"
-        }
+        requireOkOrRedirectResponse(proxiedResponse, "Authenticated Kopia proxy")
         println("      ✓ Successfully accessed Kopia through authenticated proxy")
     }
 
@@ -414,9 +406,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
 
         
         val proxiedResponse = authenticatedCaddyGet("search", "/_cluster/health")
-        require(proxiedResponse.status.value in 200..399) {
-            "Failed to access through authenticated proxy: ${proxiedResponse.status}"
-        }
+        requireOkOrRedirectResponse(proxiedResponse, "Authenticated OpenSearch proxy")
         println("      ✓ Successfully accessed OpenSearch through authenticated proxy")
     }
 
@@ -479,36 +469,4 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     
     
 
-    test("Token manager: Store and retrieve tokens") {
-        
-        val testToken = "test-token-${System.currentTimeMillis()}"
-
-        
-        require(!tokens.hasToken("test-service")) {
-            "Should not have token before storing"
-        }
-
-        
-        require(tokens.getToken("grafana") != null || !tokens.hasToken("grafana")) {
-            "Token state should be consistent"
-        }
-
-        println("      ✓ Token manager correctly manages token state")
-    }
-
-    test("Token manager: Clear tokens") {
-        
-        tokens.clearToken("grafana")
-        require(!tokens.hasToken("grafana")) {
-            "Token should be cleared"
-        }
-
-        
-        tokens.clearAll()
-        require(!tokens.hasToken("seafile") && !tokens.hasToken("forgejo")) {
-            "All tokens should be cleared"
-        }
-
-        println("      ✓ Token manager correctly clears tokens")
-    }
 }
