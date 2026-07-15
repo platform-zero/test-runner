@@ -125,7 +125,7 @@ class MatrixMailExposureHardeningTest {
         assertTrue(runtime.contains("LIVEKIT_URL: wss://matrix-rtc.${'$'}{DOMAIN}/livekit/sfu"))
         assertTrue(runtime.contains("LIVEKIT_FULL_ACCESS_HOMESERVERS: matrix.${'$'}{DOMAIN}"))
         assertTrue(runtime.contains("SSL_CERT_FILE: /ca/caddy-ca.crt"))
-        assertTrue(Regex("""(?m)^\s+- matrix-rtc\.\$\{DOMAIN}$""").findAll(caddyCompose).count() >= 2)
+        assertTrue(Regex("""(?m)^\s+- matrix-rtc\.\$\{DOMAIN}$""").findAll(caddyRuntime).count() >= 2)
 
         assertTrue(livekitConfig.contains("udp_port: 7882"))
         assertTrue(livekitConfig.contains("tcp_port: 7881"))

@@ -2,6 +2,7 @@ package org.webservices.testrunner
 
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.notExists
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
