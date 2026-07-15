@@ -146,7 +146,7 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
     }
 
     test("JupyterHub requires authentication") {
-        val response = client.getRawResponse("${env.endpoints.jupyterhub}/hub/api/user")
+        val response = client.getRawResponse("https://${caddyHost("jupyterhub")}/hub/api/user")
         require(response.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden, HttpStatusCode.Found)) {
             "JupyterHub should require authentication: ${response.status}"
         }

@@ -83,8 +83,8 @@ class StackDeploymentHelpersTest {
             "Deploy should treat local-build tagged images as rebuildable service images"
         )
         assertTrue(
-            deployScript.contains("unit_for_compose_service"),
-            "Deploy should map compose services to their systemd lifecycle unit before reloading"
+            deployScript.contains("unit_for_runtime_service"),
+            "Deploy should map runtime services to their systemd lifecycle unit before reloading"
         )
     }
 
@@ -101,12 +101,12 @@ class StackDeploymentHelpersTest {
 
     @Test
     fun `forgejo runner ssh mount uses dedicated render-managed host directory`() {
-        val compose = Files.readString(repoFile("stack.runtime.yaml"))
+        val runtime = Files.readString(repoFile("stack.runtime.yaml"))
         val renderValues = Files.readString(repoFile("scripts/lib/render-values.sh"))
         val renderRuntime = Files.readString(repoFile("scripts/deploy/render-runtime.sh"))
 
         assertTrue(
-            compose.contains("FORGEJO_RUNNER_SSH_DIR:?Set FORGEJO_RUNNER_SSH_DIR to a dedicated runner-only SSH directory"),
+            runtime.contains("FORGEJO_RUNNER_SSH_DIR:?Set FORGEJO_RUNNER_SSH_DIR to a dedicated runner-only SSH directory"),
             "Forgejo runner must not fall back to an implicit broad SSH mount"
         )
         assertTrue(
@@ -123,7 +123,7 @@ class StackDeploymentHelpersTest {
         )
         assertTrue(
             renderRuntime.contains("prepare_host_runtime_dirs"),
-            "Deploy should create host bind directories before compose validation"
+            "Deploy should create host bind directories before runtime validation"
         )
         assertTrue(
             renderRuntime.contains("chmod 700 \"${'$'}forgejo_runner_ssh_dir\""),
@@ -133,16 +133,16 @@ class StackDeploymentHelpersTest {
 
     @Test
     fun `mastodon stack targets postgres ssd across all roles`() {
-        val mastodonCompose = Files.readString(repoFile("stack.runtime.yaml"))
+        val mastodonRuntime = Files.readString(repoFile("stack.runtime.yaml"))
         val mastodonEnv = Files.readString(repoFile("stack.config/mastodon/mastodon.env"))
 
         assertTrue(
-            mastodonCompose.contains("postgres-ssd-bootstrap:\n        condition: service_completed_successfully"),
+            mastodonRuntime.contains("postgres-ssd-bootstrap:\n        condition: service_completed_successfully"),
             "Mastodon services should wait for postgres-ssd bootstrap completion before starting"
         )
         assertTrue(
-            mastodonCompose.contains("DB_HOST: postgres-ssd"),
-            "Mastodon compose should point every role at postgres-ssd"
+            mastodonRuntime.contains("DB_HOST: postgres-ssd"),
+            "Mastodon runtime should point every role at postgres-ssd"
         )
         assertTrue(
             mastodonEnv.contains("DB_HOST=postgres-ssd"),

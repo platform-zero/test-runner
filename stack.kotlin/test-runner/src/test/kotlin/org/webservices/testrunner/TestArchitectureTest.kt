@@ -2,7 +2,6 @@ package org.webservices.testrunner
 
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.notExists
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,7 +26,7 @@ class TestArchitectureTest {
     @Test
     fun `run tests script launches deployed tests through rootless podman`() {
         val text = Files.readString(repoRoot().resolve("stack.containers/test-runner/run-tests.sh"))
-        val composeText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
+        val runtimeText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
 
         assertTrue(text.contains("TEST_RUNNER_SERVICE=\"test-runner\""))
         assertTrue(text.contains("DEFAULT_KT_SUITE=\"\${DEFAULT_KT_SUITE:-stack-contract}\""))
@@ -42,103 +41,45 @@ class TestArchitectureTest {
         assertTrue(text.contains("CADDY_URL=\${CADDY_URL:-http://host.containers.internal:80}"))
         assertTrue(text.contains("PLAYWRIGHT_IGNORE_HTTPS_ERRORS=\${PLAYWRIGHT_IGNORE_HTTPS_ERRORS:-true}"))
         assertTrue(text.contains("doctor"))
-        assertFalse(text.contains("podman compose"))
         assertFalse(text.contains("TEST_RUNNER_HOST_XDG_RUNTIME_DIR"))
         assertFalse(text.contains("CONTAINER_HOST=\"unix:///run/podman/podman.sock\""))
-        assertTrue(composeText.contains("TEST_RUNNER_RUNTIME_ROOT: /runtime"))
-        assertTrue(composeText.contains("CADDY_URL: http://host.containers.internal:80"))
-        assertFalse(composeText.contains("AUTHELIA_API_URL"))
-        assertTrue(composeText.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
-        assertTrue(composeText.contains("KEYCLOAK_INTERNAL_URL: \${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}"))
-        assertTrue(composeText.contains("KEYCLOAK_ADMIN_PASSWORD: \${KEYCLOAK_ADMIN_PASSWORD}"))
-        assertTrue(composeText.contains("OPENSEARCH_URL: \${OPENSEARCH_URL:-http://opensearch:9200}"))
-        assertTrue(composeText.contains("OPENSEARCH_PASSWORD: \${OPENSEARCH_ADMIN_PASSWORD}"))
-        assertTrue(composeText.contains("INFERENCE_CONTROLLER_API_TOKEN: \${INFERENCE_CONTROLLER_API_TOKEN}"))
-        assertTrue(composeText.contains("MODEL_CONTEXT_OIDC_REDIRECT_URI: \${MODEL_CONTEXT_OIDC_REDIRECT_URI:-http://test-runner-managed/callback}"))
-        assertTrue(composeText.contains("TEST_RUNNER_CONTAINER_CLI: podman"))
-        assertTrue(composeText.contains("CONTAINER_HOST: unix:///run/podman/podman.sock"))
-        assertFalse(composeText.contains("\${TEST_RESULTS_HOST_DIR:-./test-results}"))
-        assertFalse(composeText.contains("docker-socket-controller-proxy"))
-        assertFalse(composeText.contains("docker-controller"))
+        assertTrue(runtimeText.contains("TEST_RUNNER_RUNTIME_ROOT: /runtime"))
+        assertTrue(runtimeText.contains("CADDY_URL: http://host.containers.internal:80"))
+        assertFalse(runtimeText.contains("AUTHELIA_API_URL"))
+        assertTrue(runtimeText.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
+        assertTrue(runtimeText.contains("KEYCLOAK_INTERNAL_URL: \${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}"))
+        assertTrue(runtimeText.contains("KEYCLOAK_ADMIN_PASSWORD: \${KEYCLOAK_ADMIN_PASSWORD}"))
+        assertTrue(runtimeText.contains("OPENSEARCH_URL: \${OPENSEARCH_URL:-http://opensearch:9200}"))
+        assertTrue(runtimeText.contains("OPENSEARCH_PASSWORD: \${OPENSEARCH_ADMIN_PASSWORD}"))
+        assertTrue(runtimeText.contains("INFERENCE_CONTROLLER_API_TOKEN: \${INFERENCE_CONTROLLER_API_TOKEN}"))
+        assertTrue(runtimeText.contains("MODEL_CONTEXT_OIDC_REDIRECT_URI: \${MODEL_CONTEXT_OIDC_REDIRECT_URI:-http://test-runner-managed/callback}"))
+        assertTrue(runtimeText.contains("TEST_RUNNER_CONTAINER_CLI: podman"))
+        assertTrue(runtimeText.contains("CONTAINER_HOST: unix:///run/podman/podman.sock"))
+        assertFalse(runtimeText.contains("\${TEST_RESULTS_HOST_DIR:-./test-results}"))
+        assertFalse(runtimeText.contains("socket-controller-proxy"))
+        assertFalse(runtimeText.contains("container-controller"))
         assertFalse(text.contains("suite_service()"))
         assertFalse(text.contains("test-playwright-e2e"))
     }
 
     @Test
-    fun `podman runtime does not expose docker socket proxy services`() {
+    fun `podman runtime does not expose broad container socket proxy services`() {
         val repoRoot = repoRoot()
         val agentWorkspaceSuites = Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/suites/AgentWorkspaceSuites.kt"))
-        val retiredDockerRuntimeFiles = listOf(
-            "runtime.overlays/${"docker"}-proxy.yml",
-            "runtime.overlays/watchtower.yml",
-            "runtime.overlays/autoheal.yml",
-            "runtime.overlays/cadvisor.yml",
-            "runtime.overlays/${"docker"}-exporter.yml",
-            "runtime.overlays/dozzle.yml",
-            "runtime.overlays/forgejo-runner.yml",
-            "stack.config/forgejo-runner/config.yaml"
-        )
-
-        retiredDockerRuntimeFiles.forEach { relativePath ->
-            assertTrue(repoRoot.resolve(relativePath).notExists(), "retired container runtime file should not be bundled: $relativePath")
-        }
-        assertFalse(agentWorkspaceSuites.contains("/var/run/docker.sock:/var/run/docker.sock"))
-    }
-
-    @Test
-    fun `testdev is pinned to labware and nested docker`() {
-        val repoRoot = repoRoot()
-        val commonText = Files.readString(repoRoot.resolve("scripts/testdev/common.sh"))
-        val readmeText = Files.readString(repoRoot.resolve("scripts/testdev/README.md"))
-        val remoteText = Files.readString(repoRoot.resolve("scripts/testdev/remote.sh"))
-        val upText = Files.readString(repoRoot.resolve("scripts/testdev/up.sh"))
-        val verifyText = Files.readString(repoRoot.resolve("scripts/testdev/verify.sh"))
-        val downText = Files.readString(repoRoot.resolve("scripts/testdev/down.sh"))
-        val buildText = Files.readString(repoRoot.resolve("build.sh"))
-
-        assertTrue(commonText.contains("TESTDEV_ALLOWED_HOSTS:-labware"))
-        assertTrue(commonText.contains("systemd-detect-virt"))
-        assertTrue(commonText.contains("TESTDEV_UNSAFE_ALLOW_NON_LABWARE_HOST"))
-        assertTrue(commonText.contains("TESTDEV_DOCKER_CONFIG"))
-        assertTrue(commonText.contains("-e DOCKER_CONFIG=/testdev-docker-config"))
-        assertTrue(commonText.contains("-v \"\$docker_config_dir:/testdev-docker-config-source:ro\""))
-        assertTrue(commonText.contains("mkdir -p \"\$DOCKER_CONFIG\""))
-        assertTrue(commonText.contains("cp -a /testdev-docker-config-source/. \"\$DOCKER_CONFIG\"/"))
-        assertTrue(commonText.contains("testdev_pull_workspace_base_images"))
-        assertTrue(commonText.contains("TESTDEV_PULL_WORKSPACE_BASE_IMAGES:-1"))
-        assertTrue(commonText.contains("build/stack.containers/agent-workspace/Containerfile"))
-        assertTrue(commonText.contains("docker pull \"\$image_ref\""))
-        assertFalse(Files.readString(repoRoot.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/framework/InternalApiAuth.kt")).contains("SEARCH_SERVICE_INTERNAL_TOKEN"))
-        assertTrue(commonText.contains("I_UNDERSTAND_THIS_TOUCHES_LOCAL_DOCKER"))
-        assertTrue(commonText.contains("Refusing because ${"DOCKER"}_HOST is set"))
-        assertFalse(commonText.contains("TESTDEV_ALLOW_NON_VM_HOST"))
-        assertTrue(upText.contains("testdev_require_local_docker_context"))
-        assertTrue(upText.contains("testdev_pull_workspace_base_images"))
-        assertTrue(upText.contains("[testdev] rendering runtime material"))
-        assertFalse(upText.contains("if [ ! -f \"\$deploy_root/runtime/stack.env\" ]"))
-        assertTrue(verifyText.contains("testdev_require_local_docker_context"))
-        assertTrue(downText.contains("testdev_require_local_docker_context"))
-        assertTrue(downText.contains("testdev_require_virtualized_host"))
-        assertTrue(remoteText.contains("gerald@labware.local"))
-        assertTrue(remoteText.contains("/tmp/sso-testdev-e2e"))
-        assertTrue(readmeText.contains("labware: runs disposable testdev DinD"))
-        assertTrue(readmeText.contains("latium: runs the real stack deployment"))
-        assertTrue(buildText.contains("exec \"\$SCRIPT_DIR/testdev-verify.sh\" \"\$@\""))
-        assertTrue(buildText.contains("export DIST_DIR=\"\$SCRIPT_DIR/build\""))
-        assertTrue(buildText.contains("exec \"\$SCRIPT_DIR/build/stack.containers/test-runner/run-tests.sh\" \"\$@\""))
+        assertFalse(agentWorkspaceSuites.contains("/var/run/podman/podman.sock:/var/run/podman/podman.sock"))
     }
 
     @Test
     fun `security sensitive runtime boundaries are explicit`() {
         val repoRoot = repoRoot()
-        val caddyCompose = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
+        val caddyRuntime = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
         val caddyfile = Files.readString(repoRoot.resolve("stack.config/caddy/Caddyfile"))
         val renderValues = Files.readString(repoRoot.resolve("scripts/lib/render-values.sh"))
 
-        assertTrue(caddyCompose.contains("BOOKSTACK_INTERNAL_API_TOKEN: \${BOOKSTACK_INTERNAL_API_TOKEN}"))
-        assertTrue(caddyCompose.contains("OPENSEARCH_BASIC_AUTH: \${OPENSEARCH_BASIC_AUTH}"))
-        assertTrue(caddyCompose.contains("HOMEASSISTANT_TRUSTED_PROXY_SECRET: \${HOMEASSISTANT_TRUSTED_PROXY_SECRET}"))
-        assertTrue(caddyCompose.contains("ONBOARDING_TRUSTED_PROXY_SECRET: \${ONBOARDING_TRUSTED_PROXY_SECRET}"))
+        assertTrue(caddyRuntime.contains("BOOKSTACK_INTERNAL_API_TOKEN: \${BOOKSTACK_INTERNAL_API_TOKEN}"))
+        assertTrue(caddyRuntime.contains("OPENSEARCH_BASIC_AUTH: \${OPENSEARCH_BASIC_AUTH}"))
+        assertTrue(caddyRuntime.contains("HOMEASSISTANT_TRUSTED_PROXY_SECRET: \${HOMEASSISTANT_TRUSTED_PROXY_SECRET}"))
+        assertTrue(caddyRuntime.contains("ONBOARDING_TRUSTED_PROXY_SECRET: \${ONBOARDING_TRUSTED_PROXY_SECRET}"))
         assertTrue(caddyfile.contains("header X-Internal-Token {\$BOOKSTACK_INTERNAL_API_TOKEN}"))
         assertTrue(caddyfile.contains("header_up X-Trusted-Proxy-Secret {\$HOMEASSISTANT_TRUSTED_PROXY_SECRET}"))
         assertTrue(caddyfile.contains("header_up X-Trusted-Proxy-Secret {\$ONBOARDING_TRUSTED_PROXY_SECRET}"))
@@ -148,19 +89,6 @@ class TestArchitectureTest {
         assertTrue(renderValues.contains("derive_stack_secret airflow-webserver 64"))
         assertTrue(renderValues.contains("derive_stack_secret bookstack-internal-api 64"))
         assertTrue(renderValues.contains("derive_stack_secret homeassistant-trusted-proxy 64"))
-    }
-
-    @Test
-    fun `testdev storage transform shares generated volumes by source path`() {
-        val transformText = Files.readString(repoRoot().resolve("scripts/testdev/transform-compose.py"))
-        val kopiaText = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
-
-        assertTrue(transformText.contains("def testdev_volume_name(source: str)"))
-        assertTrue(transformText.contains("return f\"testdev_bind_{digest}\""))
-        assertTrue(transformText.contains("def should_normalize_storage_source"))
-        assertFalse(transformText.contains("def testdev_volume_name(service_name: str, source: str)"))
-        assertTrue(kopiaText.contains("postgres_data:/backup/postgres:ro"))
-        assertTrue(kopiaText.contains("mariadb_data:/backup/mariadb:ro"))
     }
 
     @Test
@@ -263,7 +191,6 @@ class TestArchitectureTest {
         assertTrue(buildText.contains("site_manifest_path"))
         assertTrue(buildText.contains("mkdir -p \"\$DIST_DIR/build\""))
         assertTrue(buildText.contains("generate-contract-reports.sh"))
-        assertTrue(buildText.contains("validate_generated_compose"))
         assertFalse(buildText.contains("TEST_RESULTS_HOST_DIR=\"\${TEST_RESULTS_HOST_DIR:-\$SCRIPT_DIR/test-results}\""))
         assertTrue(Files.exists(manifestLib))
         assertTrue(repoRoot.resolve("scripts/lib/site-config.sh").notExists())
@@ -287,29 +214,29 @@ class TestArchitectureTest {
 
     @Test
     fun `test runner image uses the stable playwright uid for host bind mounts`() {
-        val dockerfileText = Files.readString(repoRoot().resolve("stack.containers/test-runner/Containerfile"))
+        val containerfileText = Files.readString(repoRoot().resolve("stack.containers/test-runner/Containerfile"))
         val entrypointText = Files.readString(repoRoot().resolve("stack.containers/test-runner/container-entrypoint.sh"))
 
-        assertTrue(dockerfileText.contains("usermod -aG docker,root pwuser"))
-        assertTrue(dockerfileText.contains("USER pwuser"))
-        assertTrue(dockerfileText.contains("COPY stack.containers/test-runner/fixtures/aider-runtime /app/stack.containers/test-runner/fixtures/aider-runtime"))
-        assertFalse(dockerfileText.contains("COPY stack.containers/test-runner/fixtures/codex-runtime /app/stack.containers/test-runner/fixtures/codex-runtime"))
-        assertFalse(dockerfileText.contains("testing_container_user"))
+        assertTrue(containerfileText.contains("usermod -aG root pwuser"))
+        assertTrue(containerfileText.contains("USER pwuser"))
+        assertTrue(containerfileText.contains("COPY stack.containers/test-runner/fixtures/aider-runtime /app/stack.containers/test-runner/fixtures/aider-runtime"))
+        assertFalse(containerfileText.contains("COPY stack.containers/test-runner/fixtures/codex-runtime /app/stack.containers/test-runner/fixtures/codex-runtime"))
+        assertFalse(containerfileText.contains("testing_container_user"))
         assertTrue(entrypointText.contains("TEST_USER=\"pwuser\""))
     }
 
     @Test
     fun `managed runner auth defaults to keycloak without authelia api wiring`() {
-        val testRunnerCompose = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
-        val authGatewayCompose = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
+        val testRunnerRuntime = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
+        val authGatewayRuntime = Files.readString(repoRoot().resolve("stack.runtime.yaml"))
         val realmTemplate = Files.readString(repoRoot().resolve("stack.config/keycloak/realm/webservices-realm.json.template"))
 
-        assertTrue(testRunnerCompose.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
-        assertTrue(testRunnerCompose.contains("KEYCLOAK_INTERNAL_URL: \${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}"))
-        assertTrue(authGatewayCompose.contains("OAUTH2_PROXY_OIDC_ISSUER_URL: https://keycloak.\${DOMAIN}/realms/webservices"))
+        assertTrue(testRunnerRuntime.contains("IDENTITY_PROVIDER: \${IDENTITY_PROVIDER:-keycloak}"))
+        assertTrue(testRunnerRuntime.contains("KEYCLOAK_INTERNAL_URL: \${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}"))
+        assertTrue(authGatewayRuntime.contains("OAUTH2_PROXY_OIDC_ISSUER_URL: https://keycloak.\${DOMAIN}/realms/webservices"))
         assertTrue(realmTemplate.contains("http://test-runner/callback"))
         assertTrue(realmTemplate.contains("http://test-runner-managed/callback"))
-        assertFalse(testRunnerCompose.contains("AUTHELIA_API_URL"))
+        assertFalse(testRunnerRuntime.contains("AUTHELIA_API_URL"))
     }
 
     @Test
@@ -317,7 +244,6 @@ class TestArchitectureTest {
         val repoRoot = repoRoot()
         val waitReadyText = Files.readString(repoRoot.resolve("scripts/lib/wait-ready.sh"))
         val deployText = Files.readString(repoRoot.resolve("scripts/deploy.sh"))
-        val composeLibText = Files.readString(repoRoot.resolve("scripts/lib/compose.sh"))
 
         assertTrue(waitReadyText.contains("LIB_DIR"))
         assertTrue(waitReadyText.contains("source \"\$LIB_DIR/common.sh\""))
@@ -325,8 +251,6 @@ class TestArchitectureTest {
         assertTrue(waitReadyText.contains("service_is_completion_dependency_job"))
         assertTrue(waitReadyText.contains("service_completed_successfully"))
         assertTrue(waitReadyText.contains("awaiting "))
-        assertTrue(composeLibText.contains("validate_generated_compose"))
-        assertTrue(composeLibText.contains("config --quiet --no-interpolate"))
         assertFalse(waitReadyText.contains("webservices-next"))
         assertTrue(deployText.contains("ensure_runtime_links"))
         assertTrue(deployText.contains("deploy_state_bootstrap_missing_global_signature"))
@@ -355,7 +279,7 @@ class TestArchitectureTest {
     }
 
     @Test
-    fun `compose startup gates reserve health checks for stateful prerequisites and init jobs`() {
+    fun `runtime startup gates reserve health checks for stateful prerequisites and init jobs`() {
         val repoRoot = repoRoot()
         val embedding = Files.readString(repoRoot.resolve("stack.runtime.yaml"))
         val pipeline = Files.readString(repoRoot.resolve("stack.runtime.yaml"))

@@ -16,7 +16,7 @@ import java.io.File
  * - **Agent-Tool-Server → All Services**: Tool execution across the stack
  *
  * ## Design Rationale
- * - **Environment Agnostic**: Works inside Docker (`service:port`) or via localhost (`localhost:mapped-port`)
+ * - **Environment Agnostic**: Works inside the container network (`service:port`) or via localhost (`localhost:mapped-port`)
  * - **Service Discovery**: Tests don't hardcode URLs; they adapt to deployment topology
  * - **Integration Scope**: Includes every service that tests might interact with, from core
  *   infrastructure (PostgreSQL, Keycloak) to end-user applications (Grafana, BookStack, Mastodon)
@@ -116,7 +116,7 @@ data class ServiceEndpoints(
          * internal container network hostnames (e.g., `http://model-context-server:8081`). This is
          * the default configuration when tests run inside the container stack.
          *
-         * Tests running in containers can directly access services via Docker's DNS resolution,
+         * Tests running in containers can directly access services via container-network DNS resolution,
          * avoiding the need for port mapping to the host machine.
          *
          * @return ServiceEndpoints configured for container network access
@@ -354,7 +354,7 @@ sealed interface TestEnvironment {
     /**
      * Localhost environment: Tests run on developer machine with port-mapped access.
      *
-     * Used during local development when tests execute outside Docker but need to
+     * Used during local development when tests execute outside the container network but need to
      * interact with containerized services via localhost port mappings. Enables
      * debugging with IDE breakpoints and faster iteration cycles.
      */

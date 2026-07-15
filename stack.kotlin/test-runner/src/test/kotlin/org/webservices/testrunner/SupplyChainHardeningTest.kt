@@ -133,13 +133,13 @@ class SupplyChainHardeningTest {
         val renderer = repoRoot().resolve("scripts/deploy/render-systemd-user.py")
         val workspace = Files.createTempDirectory("webservices-render-hardening-test-")
         try {
-            val composeConfig = workspace.resolve("compose.json")
+            val runtimeConfig = workspace.resolve("runtime-config.json")
             val graph = workspace.resolve("graph.json")
             val baseNetworks = workspace.resolve("base-networks.json")
             val outputDir = workspace.resolve("output")
 
             Files.writeString(
-                composeConfig,
+                runtimeConfig,
                 """
                 {
                   "services": {
@@ -184,14 +184,16 @@ class SupplyChainHardeningTest {
                 "--deploy-root-template", "/tmp/webservices",
                 "--unit-root-template", "/tmp/webservices/build/systemd-user",
                 "--runtime-env-file-template", "/tmp/webservices/runtime/stack.env",
-                "--compose-config-json", composeConfig.toString(),
+                "--runtime-config-json", runtimeConfig.toString(),
                 "--graph-path", graph.toString(),
                 "--output-dir", outputDir.toString(),
-                "--compose-project-name", "webservices",
+                "--runtime-project-name", "webservices",
                 "--systemd-notify-bin", "/usr/bin/systemd-notify",
-                "--compose-helper", "/tmp/webservices/build/scripts/lib/systemd-compose-unit.sh",
+                "--runtime-helper", "/tmp/webservices/build/scripts/lib/systemd-runtime-unit.sh",
                 "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-container-infra.sh",
                 "--diagnostics-helper", "/tmp/webservices/build/scripts/lib/systemd-diagnostics.sh",
+                "--host-autoheal-helper", "/tmp/webservices/build/scripts/host/host-autoheal.sh",
+                "--update-deploy-helper", "/tmp/webservices/build/scripts/host/update-deploy.sh",
                 "--base-networks-json", baseNetworks.toString(),
             )
 
@@ -230,14 +232,16 @@ class SupplyChainHardeningTest {
                 "--deploy-root-template", "/tmp/webservices",
                 "--unit-root-template", "/tmp/webservices/build/systemd-user",
                 "--runtime-env-file-template", "/tmp/webservices/runtime/stack.env",
-                "--compose-config-json", composeConfig.toString(),
+                "--runtime-config-json", runtimeConfig.toString(),
                 "--graph-path", graph.toString(),
                 "--output-dir", outputDir.toString(),
-                "--compose-project-name", "webservices",
+                "--runtime-project-name", "webservices",
                 "--systemd-notify-bin", "/usr/bin/systemd-notify",
-                "--compose-helper", "/tmp/webservices/build/scripts/lib/systemd-compose-unit.sh",
+                "--runtime-helper", "/tmp/webservices/build/scripts/lib/systemd-runtime-unit.sh",
                 "--infra-helper", "/tmp/webservices/build/scripts/lib/systemd-container-infra.sh",
                 "--diagnostics-helper", "/tmp/webservices/build/scripts/lib/systemd-diagnostics.sh",
+                "--host-autoheal-helper", "/tmp/webservices/build/scripts/host/host-autoheal.sh",
+                "--update-deploy-helper", "/tmp/webservices/build/scripts/host/update-deploy.sh",
                 "--base-networks-json", baseNetworks.toString(),
             )
             assertNotEquals(0, injectionResult.exitCode)

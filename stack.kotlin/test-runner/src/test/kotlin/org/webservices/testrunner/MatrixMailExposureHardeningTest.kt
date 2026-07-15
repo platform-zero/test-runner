@@ -102,8 +102,8 @@ class MatrixMailExposureHardeningTest {
     @Test
     fun `MatrixRTC backend routes are internal LiveKit only`() {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val caddyCompose = repoFileText("stack.runtime.yaml")
-        val compose = repoFileText("stack.runtime.yaml")
+        val caddyRuntime = repoFileText("stack.runtime.yaml")
+        val runtime = repoFileText("stack.runtime.yaml")
         val livekitConfig = repoFileText("stack.config/livekit/livekit.yaml")
         val domainToken = "{${'$'}DOMAIN}"
         val matrixRtcBlock = siteBlock(caddyfile, "matrix-rtc.$domainToken")
@@ -118,13 +118,13 @@ class MatrixMailExposureHardeningTest {
         assertFalse(matrixRtcBlock.contains("authelia_auth"))
         assertFalse(matrixRtcBlock.contains("keycloak_auth"))
 
-        assertTrue(compose.contains("image: livekit/livekit-server:v1.11.0"))
-        assertTrue(compose.contains("image: ghcr.io/element-hq/lk-jwt-service:0.4.4"))
-        assertTrue(compose.contains("\"7881:7881/tcp\""))
-        assertTrue(compose.contains("\"7882:7882/udp\""))
-        assertTrue(compose.contains("LIVEKIT_URL: wss://matrix-rtc.${'$'}{DOMAIN}/livekit/sfu"))
-        assertTrue(compose.contains("LIVEKIT_FULL_ACCESS_HOMESERVERS: matrix.${'$'}{DOMAIN}"))
-        assertTrue(compose.contains("SSL_CERT_FILE: /ca/caddy-ca.crt"))
+        assertTrue(runtime.contains("image: livekit/livekit-server:v1.11.0"))
+        assertTrue(runtime.contains("image: ghcr.io/element-hq/lk-jwt-service:0.4.4"))
+        assertTrue(runtime.contains("\"7881:7881/tcp\""))
+        assertTrue(runtime.contains("\"7882:7882/udp\""))
+        assertTrue(runtime.contains("LIVEKIT_URL: wss://matrix-rtc.${'$'}{DOMAIN}/livekit/sfu"))
+        assertTrue(runtime.contains("LIVEKIT_FULL_ACCESS_HOMESERVERS: matrix.${'$'}{DOMAIN}"))
+        assertTrue(runtime.contains("SSL_CERT_FILE: /ca/caddy-ca.crt"))
         assertTrue(Regex("""(?m)^\s+- matrix-rtc\.\$\{DOMAIN}$""").findAll(caddyCompose).count() >= 2)
 
         assertTrue(livekitConfig.contains("udp_port: 7882"))
@@ -132,8 +132,8 @@ class MatrixMailExposureHardeningTest {
         assertTrue(livekitConfig.contains("auto_create: false"))
         assertTrue(livekitConfig.contains("\"{{LIVEKIT_API_KEY}}\": \"{{LIVEKIT_API_SECRET}}\""))
         assertFalse(caddyfile.contains("jitsi", ignoreCase = true))
-        assertFalse(compose.contains("jitsi", ignoreCase = true))
-        assertFalse(compose.contains("meet.jit.si", ignoreCase = true))
+        assertFalse(runtime.contains("jitsi", ignoreCase = true))
+        assertFalse(runtime.contains("meet.jit.si", ignoreCase = true))
     }
 
     @Test
@@ -151,11 +151,11 @@ class MatrixMailExposureHardeningTest {
 
     @Test
     fun `Synapse main service runs non-root with container hardening`() {
-        val compose = repoFileText("stack.runtime.yaml")
-        val synapseService = serviceBlock(compose, "synapse")
+        val runtime = repoFileText("stack.runtime.yaml")
+        val synapseService = serviceBlock(runtime, "synapse")
 
-        assertTrue(compose.contains("synapse-permissions:"))
-        assertTrue(compose.contains("synapse-permissions:\n        condition: service_completed_successfully"))
+        assertTrue(runtime.contains("synapse-permissions:"))
+        assertTrue(runtime.contains("synapse-permissions:\n        condition: service_completed_successfully"))
         assertTrue(synapseService.contains("user: \"991:991\""))
         assertTrue(synapseService.contains("read_only: true"))
         assertTrue(synapseService.contains("/tmp:size=64m,mode=1777"))
@@ -166,18 +166,18 @@ class MatrixMailExposureHardeningTest {
 
     @Test
     fun `mailserver does not publish plaintext IMAP and requires TLS for authentication`() {
-        val compose = repoFileText("stack.runtime.yaml")
+        val runtime = repoFileText("stack.runtime.yaml")
         val entrypoint = repoFileText("stack.config/mailserver/entrypoint-wrapper.sh")
 
-        assertFalse(compose.contains("\"143:143\""))
-        assertTrue(compose.contains("\"993:993\""))
-        assertTrue(compose.contains("SPOOF_PROTECTION: 1"))
-        assertTrue(compose.contains("RSPAMD_CHECK_AUTHENTICATED: 1"))
-        assertTrue(compose.contains("ENABLE_RSPAMD: 1"))
-        assertTrue(compose.contains("Rspamd replaces the legacy OpenDKIM/OpenDMARC/policyd-spf stack"))
-        assertTrue(compose.contains("ENABLE_OPENDKIM: 0"))
-        assertTrue(compose.contains("ENABLE_OPENDMARC: 0"))
-        assertTrue(compose.contains("ENABLE_POLICYD_SPF: 0"))
+        assertFalse(runtime.contains("\"143:143\""))
+        assertTrue(runtime.contains("\"993:993\""))
+        assertTrue(runtime.contains("SPOOF_PROTECTION: 1"))
+        assertTrue(runtime.contains("RSPAMD_CHECK_AUTHENTICATED: 1"))
+        assertTrue(runtime.contains("ENABLE_RSPAMD: 1"))
+        assertTrue(runtime.contains("Rspamd replaces the legacy OpenDKIM/OpenDMARC/policyd-spf stack"))
+        assertTrue(runtime.contains("ENABLE_OPENDKIM: 0"))
+        assertTrue(runtime.contains("ENABLE_OPENDMARC: 0"))
+        assertTrue(runtime.contains("ENABLE_POLICYD_SPF: 0"))
         assertTrue(entrypoint.contains("disable_plaintext_auth = yes"))
         assertTrue(entrypoint.contains("ssl = required"))
 
@@ -187,13 +187,13 @@ class MatrixMailExposureHardeningTest {
         assertFalse(dkimSetup.contains("supervisorctl restart opendkim"))
     }
 
-    private fun serviceBlock(compose: String, serviceName: String): String {
+    private fun serviceBlock(runtime: String, serviceName: String): String {
         val marker = Regex("(?m)^  $serviceName:\\s*$")
-        val match = marker.find(compose)
-        require(match != null) { "Missing compose service $serviceName" }
+        val match = marker.find(runtime)
+        require(match != null) { "Missing runtime service $serviceName" }
         val start = match.range.first
-        val next = Regex("(?m)^  [^\\s].*:\\s*$").find(compose, match.range.last + 1)?.range?.first
-        return if (next != null) compose.substring(start, next) else compose.substring(start)
+        val next = Regex("(?m)^  [^\\s].*:\\s*$").find(runtime, match.range.last + 1)?.range?.first
+        return if (next != null) runtime.substring(start, next) else runtime.substring(start)
     }
 
     private fun siteBlock(caddyfile: String, siteLabel: String): String {

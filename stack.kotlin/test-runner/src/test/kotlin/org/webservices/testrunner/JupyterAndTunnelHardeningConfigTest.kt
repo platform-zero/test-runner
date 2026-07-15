@@ -19,12 +19,12 @@ class JupyterAndTunnelHardeningConfigTest {
     }
 
     fun `jupyterhub does not inject shared production secrets into user notebooks`() {
-        val compose = repoFileText("stack.runtime.yaml")
+        val runtime = repoFileText("stack.runtime.yaml")
         val config = repoFileText("stack.config/jupyterhub/jupyterhub_config.py")
         val startup = repoFileText("stack.containers/jupyter-notebook/startup-config.sh")
 
-        assertFalse(compose.contains("OPENAI_API_KEY:"))
-        assertFalse(compose.contains("POSTGRES_PASSWORD: ${'$'}{POSTGRES_PIPELINE_PASSWORD}"))
+        assertFalse(runtime.contains("OPENAI_API_KEY:"))
+        assertFalse(runtime.contains("POSTGRES_PASSWORD: ${'$'}{POSTGRES_PIPELINE_PASSWORD}"))
         assertFalse(config.contains("'OPENAI_API_KEY':"))
         assertFalse(config.contains("'POSTGRES_USER': os.environ.get('POSTGRES_USER', 'pipeline_user')"))
         assertFalse(startup.contains("'OPENAI_API_KEY':"))

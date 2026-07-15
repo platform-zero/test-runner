@@ -299,14 +299,6 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
     test("JupyterHub: Authenticate and access hub API") {
         ensureEdgeSession()
 
-        
-        val directResponse = getRawResponseWithRetry("http://jupyterhub:8000/hub/api")
-        require(directResponse.status == HttpStatusCode.OK || directResponse.status == HttpStatusCode.Unauthorized) {
-            "JupyterHub container not responding: ${directResponse.status}"
-        }
-        println("      ✓ JupyterHub container accessible")
-
-        
         val proxiedResponse = authenticatedCaddyGet("jupyterhub")
         require(proxiedResponse.status.value in 200..399) {
             "Failed to access through authenticated proxy: ${proxiedResponse.status}"

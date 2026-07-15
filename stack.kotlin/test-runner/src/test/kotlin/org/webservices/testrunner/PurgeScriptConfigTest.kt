@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class PurgeScriptConfigTest {
     @Test
-    fun `webservices purge covers systemd compose and labware workspace resources`() {
+    fun `webservices purge covers systemd and labware workspace resources`() {
         val purge = repoFileText("ops/host-admin/purge-webservices-stack.sh")
 
         assertTrue(purge.contains("systemctl --user"))
@@ -15,14 +15,14 @@ class PurgeScriptConfigTest {
         assertTrue(purge.contains("--print-only"))
         assertTrue(purge.contains("EXPECTED_HOSTNAME"))
         assertTrue(purge.contains("--yes-delete-webservices-stack"))
-        assertTrue(purge.contains("print_docker_targets"))
-        assertTrue(purge.contains("label=com.${"docker"}.compose.project=\$STACK_PROJECT_NAME"))
+        assertTrue(purge.contains("print_container_targets"))
+        assertTrue(purge.contains("label=org.platform-zero.runtime.project=\$STACK_PROJECT_NAME"))
         assertTrue(purge.contains("\${STACK_PROJECT_NAME}_ name prefix"))
         assertTrue(purge.contains("list_target_volume_names"))
         assertTrue(purge.contains("index(\$0, prefix) == 1"))
-        assertTrue(purge.contains("docker network rm"))
-        assertTrue(purge.contains("docker volume rm"))
-        assertTrue(purge.contains("LABWARE_${"DOCKER"}_HOST=\"\${LABWARE_${"DOCKER"}_HOST:-unix:///run/docker-labware/docker.sock}\""))
+        assertTrue(purge.contains("\"${'$'}CONTAINER_CLI\" network rm"))
+        assertTrue(purge.contains("\"${'$'}CONTAINER_CLI\" volume rm"))
+        assertTrue(purge.contains("LABWARE_CONTAINER_HOST=\"\${LABWARE_CONTAINER_HOST:-unix:///run/labware/podman.sock}\""))
         assertTrue(purge.contains("label=webservices.workspace.id"))
         assertTrue(purge.contains("label=webservices.test.tenant.id"))
         assertTrue(purge.contains("purge_labware_runtime"))
