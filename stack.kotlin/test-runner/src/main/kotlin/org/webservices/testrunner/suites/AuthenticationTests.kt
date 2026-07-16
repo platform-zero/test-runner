@@ -120,8 +120,8 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
         val response = getBookStackResponse("/api/books")
             ?: fail("BookStack unavailable after retries while validating authentication")
 
-        require(response.status in listOf(HttpStatusCode.OK, HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
-            "BookStack should require authentication or return empty: ${response.status}"
+        require(response.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
+            "BookStack must reject unauthenticated content API access: ${response.status}"
         }
 
         println("      ✓ BookStack API accessible")
@@ -155,10 +155,10 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
     }
 
     test("Seafile requires authentication for API") {
-        val response = client.getRawResponse("${env.endpoints.seafile}/api2/auth/ping/")
+        val response = client.getRawResponse("${env.endpoints.seafile}/api2/account/info/")
 
-        require(response.status in listOf(HttpStatusCode.OK, HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized)) {
-            "Seafile API not accessible: ${response.status}"
+        require(response.status in listOf(HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized)) {
+            "Seafile must reject unauthenticated account API access: ${response.status}"
         }
 
         println("      ✓ Seafile authentication endpoint accessible")
@@ -167,8 +167,8 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
     test("Planka requires authentication for boards") {
         val response = client.getRawResponse("${env.endpoints.planka}/api/boards")
         
-        require(response.status in listOf(HttpStatusCode.OK, HttpStatusCode.Unauthorized)) {
-            "Planka should require authentication or return empty: ${response.status}"
+        require(response.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
+            "Planka must reject unauthenticated boards API access: ${response.status}"
         }
 
         println("      ✓ Planka API accessible")

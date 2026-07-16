@@ -10,26 +10,15 @@ const val STACK_LIVE_INGESTION_SUITE_NAME = "stack-live-ingestion"
 const val STACK_FULL_SUITE_NAME = "stack-full"
 
 suspend fun TestRunner.stackCoreTests() {
-    foundationTests()
-    infrastructureTests()
-    databaseTests()
-    utilityServicesTests()
+    runManagedCategory(ManagedSuiteCategory.CORE)
 }
 
 suspend fun TestRunner.stackAuthTests() {
-    authenticationTests()
-    authenticatedOperationsTests()
-    enhancedAuthenticationTests()
+    runManagedCategory(ManagedSuiteCategory.AUTH)
 }
 
 suspend fun TestRunner.stackAppTests() {
-    communicationTests()
-    productivityTests()
-    fileManagementTests()
-    monitoringTests()
-    cachingLayerTests()
-    extendedCommunicationTests()
-    extendedProductivityTests()
+    runManagedCategory(ManagedSuiteCategory.APPS)
 }
 
 suspend fun TestRunner.stackContractTests() {
@@ -39,7 +28,7 @@ suspend fun TestRunner.stackContractTests() {
 }
 
 suspend fun TestRunner.stackLiveIngestionTests() {
-    // Live-ingestion coverage is currently provided by external browser and deploy suites.
+    runManagedCategory(ManagedSuiteCategory.LIVE_INGESTION)
 }
 
 suspend fun TestRunner.webServicesTests() {

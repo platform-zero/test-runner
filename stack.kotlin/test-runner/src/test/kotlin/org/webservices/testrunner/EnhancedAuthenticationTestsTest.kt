@@ -1,259 +1,88 @@
 package org.webservices.testrunner
 
-import io.ktor.client.*
-import io.ktor.client.engine.mock.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.utils.io.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.webservices.testrunner.framework.*
-import org.webservices.testrunner.suites.enhancedAuthenticationTests
-import kotlin.test.*
-
+import org.webservices.testrunner.framework.AuthHelper
+import org.webservices.testrunner.framework.AuthResult
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class EnhancedAuthenticationTestsTest {
 
     @Test
-    fun `enhanced auth test suite should initialize without directory helper`() = runTest {
-        
-        val env = TestEnvironment.Container
-        val mockClient = createMinimalMockClient()
-        val serviceClient = ServiceClient(env.endpoints, mockClient)
-        val runner = TestRunner(env, serviceClient, mockClient)
+    fun `direct password login reports the keycloak browser contract`() = runTest {
+        val result = AuthHelper(mockClient()).login("testuser", "testpass123")
 
-        
-        
-        assertNotNull(runner)
-
-        assertNotNull(runner.auth, "Auth helper should be available")
-    }
-
-    @Test
-    fun `enhanced auth suite should have correct test structure`() {
-        
-        
-
-        val testPhases = listOf(
-            "Phase 1: Core Authentication Flows",
-            "Phase 2: OIDC Token Flow Tests",
-            "Phase 3: Forward Auth & Access Control Tests",
-            "Phase 4: Cross-Service SSO Tests"
+        val error = assertIs<AuthResult.Error>(result)
+        assertEquals(
+            "Direct API login is not supported; Keycloak login is browser-driven and tested by Playwright.",
+            error.message,
         )
-
-        
-        val expectedTestCounts = mapOf(
-            "Phase 1" to 5,
-            "Phase 2" to 4,
-            "Phase 3" to 4,
-            "Phase 4" to 2
-        )
-
-        val totalExpected = expectedTestCounts.values.sum()
-        assertEquals(15, totalExpected, "Should have 15 total tests across all phases")
     }
 
     @Test
-    fun `auth helper should properly validate session cookies`() {
-        
-        val validCookieNames = listOf("trusted_internal_edge_auth")
-        val invalidCookieNames = listOf("", "invalid_session", "PHPSESSID")
+    fun `direct password login still validates credentials before rejecting the flow`() = runTest {
+        val result = AuthHelper(mockClient()).login("", "testpass123")
 
-        
-        assertTrue(validCookieNames.contains("trusted_internal_edge_auth"))
-        assertFalse(invalidCookieNames.contains("trusted_internal_edge_auth"))
+        val error = assertIs<AuthResult.Error>(result)
+        assertContains(error.message, "Username cannot be blank")
     }
 
     @Test
-    fun `test environment should have all required OIDC secrets`() {
-        val env = TestEnvironment.Container
+    fun `trusted internal session exposes one exact cookie and logout clears it`() {
+        val auth = AuthHelper(mockClient())
 
-        
-        assertNotNull(env.domain)
-        assertNotNull(env.openwebuiOAuthSecret)
-        assertNotNull(env.grafanaOAuthSecret)
-        assertNotNull(env.mastodonOAuthSecret)
-        assertNotNull(env.forgejoOAuthSecret)
-        assertNotNull(env.bookstackOAuthSecret)
+        val result = auth.trustInternalUser("alice", listOf("users", "operators"))
+        val success = assertIs<AuthResult.Success>(result)
+        assertEquals("trusted_internal_edge_auth", success.sessionCookie.name)
+        assertEquals("alice", success.sessionCookie.value)
+        assertTrue(success.sessionCookie.httpOnly)
+        assertTrue(success.sessionCookie.secure)
+        assertTrue(auth.isAuthenticated())
+        assertEquals(success.sessionCookie, auth.getSessionCookie())
+
+        auth.logout()
+
+        assertFalse(auth.isAuthenticated())
+        assertNull(auth.getSessionCookie())
     }
 
     @Test
-    fun `test environment should distinguish dev vs prod mode`() {
-        val containerEnv = TestEnvironment.Container
-        val localhostEnv = TestEnvironment.Localhost
-
-        
-        assertFalse(containerEnv.isDevMode, "Container env should not be dev mode")
-
-        
-        assertTrue(localhostEnv.isDevMode, "Localhost env should be dev mode")
+    fun `auth verification requires exact 200 and the trusted username in the body`() = runTest {
+        assertTrue(verifier(HttpStatusCode.OK, "signed in as alice").verifyAuth())
+        assertFalse(verifier(HttpStatusCode.OK, "signed in as bob").verifyAuth())
+        assertFalse(verifier(HttpStatusCode.Found, "signed in as alice").verifyAuth())
+        assertFalse(verifier(HttpStatusCode.Unauthorized, "signed in as alice").verifyAuth())
     }
 
-    @Test
-    fun `enhanced auth tests should use proper error handling`() = runTest {
-        
-        val mockClient = createErrorMockClient()
-        val env = TestEnvironment.Container
-        val serviceClient = ServiceClient(env.endpoints, mockClient)
-        val runner = TestRunner(env, serviceClient, mockClient)
+    private fun verifier(status: HttpStatusCode, body: String): AuthHelper =
+        AuthHelper(
+            client = mockClient(),
+            requestClient = mockClient(status, body),
+            protectedServiceUrl = "https://service.example.test/",
+        ).also { it.trustInternalUser("alice", listOf("users")) }
 
-        
-        val authResult = runner.auth.login("testuser", "testpass123")
-        assertTrue(authResult is AuthResult.Error, "Should return error on network failure")
-    }
-
-    @Test
-    fun `enhanced auth tests should validate HTTP status codes`() {
-        
-        val validAuthStatuses = listOf(
-            HttpStatusCode.OK,
-            HttpStatusCode.Found,
-            HttpStatusCode.TemporaryRedirect
-        )
-
-        val invalidAuthStatuses = listOf(
-            HttpStatusCode.Unauthorized,
-            HttpStatusCode.Forbidden,
-            HttpStatusCode.InternalServerError
-        )
-
-        
-        assertTrue(HttpStatusCode.OK.value in 200..299)
-        assertTrue(HttpStatusCode.Found.value in 300..399)
-        assertTrue(HttpStatusCode.Unauthorized.value in 400..499)
-        assertTrue(HttpStatusCode.InternalServerError.value in 500..599)
-    }
-
-    @Test
-    fun `SQL injection test strings should be properly escaped`() {
-        
-        val sqlInjectionAttempts = listOf(
-            "admin' OR '1'='1",
-            "' OR '1'='1' --",
-            "admin'--",
-            "'; DROP TABLE users--"
-        )
-
-        
-        sqlInjectionAttempts.forEach { attempt ->
-            assertNotNull(attempt)
-            assertTrue(attempt.contains("'"), "SQL injection test should contain quotes")
-        }
-    }
-
-    @Test
-    fun `test suite should properly clean up ephemeral users`() = runTest {
-        
-        val mockClient = createMinimalMockClient()
-        val env = TestEnvironment.Container
-        val serviceClient = ServiceClient(env.endpoints, mockClient)
-        val runner = TestRunner(env, serviceClient, mockClient)
-
-        
-        assertNotNull(runner.auth)
-
-        
-        runner.auth.logout()
-        assertFalse(runner.auth.isAuthenticated(), "Should not be authenticated after logout")
-    }
-
-    @Test
-    fun `Keycloak edge auth helper should be properly initialized`() = runTest {
-        val mockClient = createMinimalMockClient()
-        val env = TestEnvironment.Container
-        val serviceClient = ServiceClient(env.endpoints, mockClient)
-        val runner = TestRunner(env, serviceClient, mockClient)
-
-        
-        assertNotNull(runner.auth, "Auth helper should be initialized")
-    }
-
-    @Test
-    fun `enhanced auth tests should use correct service endpoints`() {
-        val env = TestEnvironment.Container
-        val endpoints = env.endpoints
-
-        
-        assertNotNull(endpoints.keycloak, "Keycloak endpoint required")
-        assertNotNull(endpoints.caddy, "Caddy endpoint required for forward auth tests")
-        assertNotNull(endpoints.grafana, "Grafana endpoint required for SSO tests")
-        assertNotNull(endpoints.bookstack, "BookStack endpoint required")
-        assertNotNull(endpoints.forgejo, "Forgejo endpoint required")
-        assertNotNull(endpoints.planka, "Planka endpoint required")
-    }
-
-    @Test
-    fun `test should run with keycloak helper only`() = runTest {
-        
-        val env = TestEnvironment.Container
-        val mockClient = createMinimalMockClient()
-        val serviceClient = ServiceClient(env.endpoints, mockClient)
-        val runner = TestRunner(env, serviceClient, mockClient)
-
-        assertNotNull(runner.auth, "Auth helper should still be available")
-    }
-
-    @Test
-    fun `enhanced auth suite should test all critical flows`() {
-        
-        val criticalFlows = listOf(
-            "login",
-            "logout",
-            "session persistence",
-            "credential validation",
-            "SQL injection protection",
-            "OIDC token exchange",
-            "JWT validation",
-            "forward auth",
-            "access control",
-            "SSO"
-        )
-
-        
-        assertEquals(10, criticalFlows.size, "Should test 10 critical auth flows")
-        assertTrue(criticalFlows.contains("login"))
-        assertTrue(criticalFlows.contains("logout"))
-        assertTrue(criticalFlows.contains("SSO"))
-    }
-
-    
-    
-    
-
-    private fun createMinimalMockClient(): HttpClient {
-        return HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    respond(
-                        content = ByteReadChannel("""{"status":"OK"}"""),
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(
-                            HttpHeaders.ContentType to listOf(ContentType.Application.Json.toString())
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-    }
-
-    private fun createErrorMockClient(): HttpClient {
-        return HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    respond(
-                        content = ByteReadChannel("""{"error":"Network error"}"""),
-                        status = HttpStatusCode.InternalServerError,
-                        headers = headersOf(
-                            HttpHeaders.ContentType to listOf(ContentType.Application.Json.toString())
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) {
-                json()
+    private fun mockClient(
+        status: HttpStatusCode = HttpStatusCode.OK,
+        body: String = "{}",
+    ): HttpClient = HttpClient(MockEngine) {
+        followRedirects = false
+        engine {
+            addHandler {
+                respond(
+                    content = body,
+                    status = status,
+                    headers = headersOf("Content-Type", "application/json"),
+                )
             }
         }
     }

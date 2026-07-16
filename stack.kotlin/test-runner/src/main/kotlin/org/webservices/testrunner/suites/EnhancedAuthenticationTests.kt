@@ -158,9 +158,7 @@ suspend fun TestRunner.enhancedAuthenticationTests() = suite("Enhanced Authentic
             applyCaddyVirtualHost(caddyHost("portal"))
         }
 
-        require(response.status.value in 200..399) {
-            "Authenticated request should reach service: ${response.status}"
-        }
+        requireOkOrRedirectResponse(response, "Authenticated portal request")
 
         println("      ✓ Authenticated request successfully reached protected service")
         println("        - Status: ${response.status}")
@@ -176,28 +174,24 @@ suspend fun TestRunner.enhancedAuthenticationTests() = suite("Enhanced Authentic
             Triple("planka", "/", "Planka")
         )
 
-        var successCount = 0
+        val failures = mutableListOf<String>()
         for ((subdomain, path, serviceName) in allowedServices) {
             try {
                 val response = auth.authenticatedGet(caddyUrl(endpoints.caddy, path)) {
                     applyCaddyVirtualHost(caddyHost(subdomain))
                 }
-                if (response.status.value in 200..399) {
-                    println("      ✓ User accessed $serviceName: ${response.status}")
-                    successCount++
-                } else {
-                    println("      ⚠ $serviceName returned: ${response.status}")
-                }
+                requireOkOrRedirectResponse(response, "Authenticated $serviceName request")
+                println("      ✓ User accessed $serviceName: ${response.status}")
             } catch (e: Exception) {
-                println("      ⚠ $serviceName error: ${e.message?.take(50)}")
+                failures += "$serviceName: ${e.message}"
             }
         }
 
-        require(successCount > 0) {
-            "User should be able to access at least one service"
+        require(failures.isEmpty()) {
+            "Authenticated user could not access every allowed service: ${failures.joinToString()}"
         }
 
-        println("      ✓ User accessed $successCount/${allowedServices.size} services")
+        println("      ✓ User accessed all ${allowedServices.size} allowed services")
     }
 
     test("Phase 3: Internal trusted edge path requires shared secret") {
@@ -224,26 +218,24 @@ suspend fun TestRunner.enhancedAuthenticationTests() = suite("Enhanced Authentic
             Triple("forgejo", "/", "Forgejo")
         )
 
-        var accessibleServices = 0
+        val failures = mutableListOf<String>()
         for ((subdomain, path, serviceName) in services) {
             try {
                 val response = auth.authenticatedGet(caddyUrl(endpoints.caddy, path)) {
                     applyCaddyVirtualHost(caddyHost(subdomain))
                 }
-                if (response.status.value in 200..399) {
-                    println("      ✓ SSO granted access to $serviceName")
-                    accessibleServices++
-                }
+                requireOkOrRedirectResponse(response, "SSO request to $serviceName")
+                println("      ✓ SSO granted access to $serviceName")
             } catch (e: Exception) {
-                println("      ⚠ $serviceName: ${e.message?.take(50)}")
+                failures += "$serviceName: ${e.message}"
             }
         }
 
-        require(accessibleServices >= 2) {
-            "SSO should grant access to at least 2 services, got $accessibleServices"
+        require(failures.isEmpty()) {
+            "The shared edge identity did not reach every selected service: ${failures.joinToString()}"
         }
 
-        println("      ✓ Single Sign-On working: 1 edge identity → $accessibleServices services")
+        println("      ✓ Single Sign-On working: 1 edge identity → ${services.size} services")
     }
 
     test("Phase 4: Logout clears local test session state") {
@@ -252,9 +244,7 @@ suspend fun TestRunner.enhancedAuthenticationTests() = suite("Enhanced Authentic
         val beforeLogout = auth.authenticatedGet(caddyUrl(endpoints.caddy)) {
             applyCaddyVirtualHost(caddyHost("grafana"))
         }
-        require(beforeLogout.status.value in 200..399) {
-            "Should have access before logout"
-        }
+        requireOkOrRedirectResponse(beforeLogout, "Grafana access before logout")
         println("      ✓ Access granted before logout")
 
         auth.logout()

@@ -18,6 +18,7 @@ class JupyterAndTunnelHardeningConfigTest {
         assertTrue(startupScript.contains("os.umask(old_umask)"))
     }
 
+    @Test
     fun `jupyterhub does not inject shared production secrets into user notebooks`() {
         val runtime = repoFileText("stack.runtime.yaml")
         val config = repoFileText("stack.config/jupyterhub/jupyterhub_config.py")
@@ -31,8 +32,7 @@ class JupyterAndTunnelHardeningConfigTest {
         assertFalse(startup.contains("print(env_path.read_text()"))
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()

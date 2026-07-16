@@ -23,8 +23,7 @@ class SeafileSynapseHardeningConfigTest {
         val runtimeEntrypoint = repoFileText("stack.config/seafile/runtime-entrypoint.sh")
         val seahubSettings = repoFileText("stack.config/seafile/seahub_settings.py")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val seafileRuntime = repoFileText("stack.runtime.yaml")
-        val volumes = repoFileText("global.settings/volumes.yml")
+        val seafileRuntime = TestSourceFiles.moduleText("seafile", "stack.runtime.yaml")
         val deploy = repoFileText("scripts/deploy.sh")
 
         assertTrue(runtimeEntrypoint.contains("re.compile(r\"^[A-Za-z_][A-Za-z0-9_]*$\")"))
@@ -41,15 +40,14 @@ class SeafileSynapseHardeningConfigTest {
         assertTrue(caddyfile.contains("header_up -X-Trusted-Proxy-Secret"))
         assertTrue(seafileRuntime.contains("- seafile_files:/shared"))
         assertFalse(seafileRuntime.contains("/shared/seafile/seafile-data/storage"))
-        assertTrue(volumes.contains("seafile_files:"))
-        assertTrue(volumes.contains("device: \${SEAFILE_MEDIA_ROOT}"))
-        assertFalse(volumes.contains("seafile_media:"))
+        assertTrue(seafileRuntime.contains("seafile_files:"))
+        assertTrue(seafileRuntime.contains("hostPath: \"\${SEAFILE_MEDIA_ROOT}\""))
+        assertFalse(seafileRuntime.contains("seafile_media:"))
         assertTrue(deploy.contains("migrate_legacy_seafile_split_volume"))
         assertTrue(deploy.contains("legacy Seafile split volume"))
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()

@@ -102,8 +102,9 @@ class MatrixMailExposureHardeningTest {
     @Test
     fun `MatrixRTC backend routes are internal LiveKit only`() {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val caddyRuntime = repoFileText("stack.runtime.yaml")
-        val runtime = repoFileText("stack.runtime.yaml")
+        val caddyRuntime = moduleFileText("caddy", "stack.runtime.yaml")
+        val runtime = moduleFileText("livekit", "stack.runtime.yaml") +
+            moduleFileText("matrix-authentication-service", "stack.runtime.yaml")
         val livekitConfig = repoFileText("stack.config/livekit/livekit.yaml")
         val domainToken = "{${'$'}DOMAIN}"
         val matrixRtcBlock = siteBlock(caddyfile, "matrix-rtc.$domainToken")
@@ -151,22 +152,24 @@ class MatrixMailExposureHardeningTest {
 
     @Test
     fun `Synapse main service runs non-root with container hardening`() {
-        val runtime = repoFileText("stack.runtime.yaml")
+        val runtime = moduleFileText("synapse", "stack.runtime.yaml")
         val synapseService = serviceBlock(runtime, "synapse")
 
         assertTrue(runtime.contains("synapse-permissions:"))
-        assertTrue(runtime.contains("synapse-permissions:\n        condition: service_completed_successfully"))
+        assertTrue(runtime.contains("synapse-permissions: \"completed\""))
         assertTrue(synapseService.contains("user: \"991:991\""))
-        assertTrue(synapseService.contains("read_only: true"))
+        assertTrue(synapseService.contains("readOnly: true"))
         assertTrue(synapseService.contains("/tmp:size=64m,mode=1777"))
-        assertTrue(synapseService.contains("cap_drop:\n      - ALL"))
-        assertTrue(synapseService.contains("security_opt:\n      - no-new-privileges:true"))
+        assertTrue(synapseService.contains("capDrop:"))
+        assertTrue(synapseService.contains("- \"ALL\""))
+        assertTrue(synapseService.contains("securityOpt:"))
+        assertTrue(synapseService.contains("- \"no-new-privileges:true\""))
         assertFalse(synapseService.contains("user: \"0:0\""))
     }
 
     @Test
     fun `mailserver does not publish plaintext IMAP and requires TLS for authentication`() {
-        val runtime = repoFileText("stack.runtime.yaml")
+        val runtime = moduleFileText("mailserver", "stack.runtime.yaml")
         val entrypoint = repoFileText("stack.config/mailserver/entrypoint-wrapper.sh")
 
         assertFalse(runtime.contains("\"143:143\""))
@@ -174,7 +177,6 @@ class MatrixMailExposureHardeningTest {
         assertTrue(runtime.contains("SPOOF_PROTECTION: 1"))
         assertTrue(runtime.contains("RSPAMD_CHECK_AUTHENTICATED: 1"))
         assertTrue(runtime.contains("ENABLE_RSPAMD: 1"))
-        assertTrue(runtime.contains("Rspamd replaces the legacy OpenDKIM/OpenDMARC/policyd-spf stack"))
         assertTrue(runtime.contains("ENABLE_OPENDKIM: 0"))
         assertTrue(runtime.contains("ENABLE_OPENDMARC: 0"))
         assertTrue(runtime.contains("ENABLE_POLICYD_SPF: 0"))
@@ -229,8 +231,10 @@ class MatrixMailExposureHardeningTest {
         error("Unclosed brace block at index $openBraceIndex")
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
+
+    private fun moduleFileText(moduleId: String, relativePath: String): String =
+        TestSourceFiles.moduleText(moduleId, relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()

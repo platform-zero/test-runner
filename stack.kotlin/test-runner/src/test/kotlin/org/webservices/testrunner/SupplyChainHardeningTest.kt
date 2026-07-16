@@ -262,8 +262,7 @@ class SupplyChainHardeningTest {
         assertTrue(text.contains("mv -f \"\$tmp_unit\" \"\$USER_UNIT_DIR/\$rendered_name\""))
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()

@@ -13,30 +13,23 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `keycloak service is a default core identity service`() {
-        val runtime = repoFileText("stack.runtime.yaml")
-        val graph = repoFileText("stack.systemd/graph.json")
-        val caddyRuntime = repoFileText("stack.runtime.yaml")
+        val runtime = moduleFileText("keycloak", "stack.runtime.yaml")
+        val caddyRuntime = moduleFileText("caddy", "stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
         val hosts = repoFileText("stack.containers/test-runner/fixtures/caddy-hosts.txt")
-        val authGateway = repoFileText("stack.runtime.yaml")
+        val authGateway = moduleFileText("keycloak-auth-gateway", "stack.runtime.yaml")
         val configureRuntime = repoFileText("stack.config/keycloak/configure-runtime.sh")
 
         assertTrue(runtime.contains("keycloak-bootstrap:"))
         assertTrue(runtime.contains("image: webservices/keycloak:local-build"))
         assertTrue(runtime.contains("containerfile: ./stack.containers/keycloak/Containerfile"))
         assertTrue(runtime.contains("restart: \"no\""))
-        assertTrue(runtime.contains("condition: service_completed_successfully"))
+        assertTrue(runtime.contains("keycloak-bootstrap: \"completed\""))
         assertTrue(runtime.contains("KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak"))
         assertTrue(runtime.contains("./configs/keycloak/realm:/opt/keycloak/data/import:ro"))
         assertTrue(runtime.contains("- --import-realm"))
         assertTrue(runtime.contains("KC_HOSTNAME: https://keycloak.\${DOMAIN}"))
 
-        assertTrue(graph.contains("\"keycloak-bootstrap\""))
-        assertTrue(graph.contains("\"keycloak\""))
-        assertTrue(graph.contains("\"keycloak-configure\""))
-        assertTrue(graph.contains("\"keycloak-auth-gateway\""))
-        assertTrue(graph.contains("\"webservices-core.target\""))
-        assertFalse(Regex(""""onDemandServices":\s*\[[^\]]*"keycloak"""", RegexOption.DOT_MATCHES_ALL).containsMatchIn(graph))
         assertTrue(caddyRuntime.contains("- keycloak.\${DOMAIN}"))
         assertTrue(caddyRuntime.contains("- keycloak-auth.\${DOMAIN}"))
         assertTrue(caddyRuntime.contains("- keycloak-whoami.\${DOMAIN}"))
@@ -47,7 +40,7 @@ class KeycloakIdentityConfigTest {
         assertTrue(caddyfile.contains("(keycloak_group_allow)"))
         assertTrue(caddyfile.contains("forward_auth keycloak-auth-gateway:4180"))
         assertTrue(caddyfile.contains("header X-Trusted-Proxy-Secret {\$MODEL_CONTEXT_PROXY_AUTH_SECRET:__disabled__}"))
-        assertTrue(caddyfile.contains("remote_ip {\$TRUSTED_PROXY_SOURCE_RANGES:10.89.0.0/16 127.0.0.1/32 ::1/128}"))
+        assertTrue(caddyfile.contains("remote_ip {\$TRUSTED_PROXY_SOURCE_RANGES:127.0.0.1/32 ::1/128}"))
         assertTrue(caddyfile.contains("request_header -X-Trusted-Proxy-Secret"))
         assertTrue(caddyfile.contains("import keycloak_auth grafana"))
         assertFalse(caddyfile.contains("import authelia_auth"))
@@ -110,7 +103,7 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `onboarding is authenticated and event marker driven`() {
-        val onboardingRuntime = repoFileText("stack.runtime.yaml")
+        val onboardingRuntime = moduleFileText("onboarding", "stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
         val containerfile = repoFileText("stack.containers/keycloak/Containerfile")
         val listenerFactory = repoFileText("stack.kotlin/keycloak-onboarding-listener/src/main/java/org/webservices/keycloak/onboarding/OnboardingMarkerEventListenerProviderFactory.java")
@@ -142,7 +135,7 @@ class KeycloakIdentityConfigTest {
 
     @Test
     fun `postgres keycloak database bootstrap supports fresh and existing deployments`() {
-        val postgresCompose = repoFileText("stack.runtime.yaml")
+        val postgresCompose = moduleFileText("postgres", "stack.runtime.yaml")
         val initDb = repoFileText("stack.config/postgres/init-db.sh")
         val ensureDb = repoFileText("stack.config/postgres/ensure-keycloak-db.sh")
 
@@ -169,22 +162,18 @@ class KeycloakIdentityConfigTest {
     @Test
     fun `retired directory runtime services are removed while Keycloak backed groupware is restored`() {
         val root = repoRoot()
-        val graph = repoFileText("stack.systemd/graph.json")
-        val caddyRuntime = repoFileText("stack.runtime.yaml")
+        val caddyRuntime = moduleFileText("caddy", "stack.runtime.yaml")
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val sogoCompose = repoFileText("stack.runtime.yaml")
-        val mailserverCompose = repoFileText("stack.runtime.yaml")
-        val homeassistantCompose = repoFileText("stack.runtime.yaml")
-        val testRunnerRuntime = repoFileText("stack.runtime.yaml")
+        val sogoCompose = moduleFileText("sogo", "stack.runtime.yaml")
+        val mailserverCompose = moduleFileText("mailserver", "stack.runtime.yaml")
+        val homeassistantCompose = moduleFileText("homeassistant", "stack.runtime.yaml")
+        val testRunnerRuntime = moduleFileText("test-runners", "stack.runtime.yaml")
         val networkSettings = repoFileText("global.settings/networks.yml")
 
         assertFalse(Files.exists(root.resolve("runtime.overlays/$retiredDirectoryId.yml")))
         assertFalse(Files.exists(root.resolve("stack.config/homeassistant/auth_${retiredDirectoryId}.py")))
         assertFalse(Files.exists(root.resolve("stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/framework/${retiredDirectoryId.replaceFirstChar { it.uppercase() }}Helper.kt")))
 
-        assertFalse(graph.contains("\"$retiredDirectoryId\""))
-        assertTrue(graph.contains("\"sogo\""))
-        assertFalse(graph.contains("\"$retiredAccountManagerId\""))
         assertTrue(caddyRuntime.contains("sogo.\${DOMAIN}"))
         assertFalse(caddyRuntime.contains("$retiredDirectoryId:"))
         assertTrue(caddyfile.contains("sogo.{\$DOMAIN}"))
@@ -200,12 +189,12 @@ class KeycloakIdentityConfigTest {
     @Test
     fun `service routes enforce keycloak group rbac at the edge`() {
         val caddyfile = repoFileText("stack.config/caddy/Caddyfile")
-        val donetickCompose = repoFileText("stack.runtime.yaml")
+        val donetickCompose = moduleFileText("donetick", "stack.runtime.yaml")
         val erpnextBootstrap = repoFileText("stack.config/erpnext/bootstrap-site.sh")
 
         assertTrue(caddyfile.contains("Jellyfin password login is disabled; use Keycloak SSO"))
-        assertTrue(caddyfile.contains("request_header X-Remote-User {header.Remote-User}"))
-        assertTrue(caddyfile.contains("header_up X-Remote-User {header.X-Remote-User}"))
+        assertTrue(caddyfile.contains("request_header Remote-User {http.request.header.X-Remote-User}"))
+        assertTrue(caddyfile.contains("header_up X-Remote-User {header.Remote-User}"))
         assertTrue(caddyfile.contains("not header_regexp Remote-Groups (^|.*[,[:space:]])({args[1]})([,[:space:]].*|$)"))
         assertTrue(caddyfile.contains("import keycloak_group_allow donetick users|operators|admins"))
         assertTrue(caddyfile.contains("import keycloak_group_allow erpnext admins|operators"))
@@ -219,11 +208,18 @@ class KeycloakIdentityConfigTest {
         assertTrue(donetickCompose.contains("DONETICK_DISABLE_SIGNUP: \"true\""))
         assertTrue(erpnextBootstrap.contains("promoting Keycloak-created users to ERPNext desk users"))
         assertTrue(erpnextBootstrap.contains("user.user_type = \"System User\""))
-        assertTrue(erpnextBootstrap.contains("\"Desk User\", \"Employee\", \"Projects User\""))
+        listOf("Desk User", "Employee", "Projects User").forEach { requiredRole ->
+            assertTrue(
+                erpnextBootstrap.contains("\"$requiredRole\""),
+                "ERPNext bootstrap must grant the $requiredRole role to eligible Keycloak-created desk users"
+            )
+        }
     }
 
-    private fun repoFileText(relativePath: String): String =
-        Files.readString(repoRoot().resolve(relativePath))
+    private fun repoFileText(relativePath: String): String = TestSourceFiles.repositoryText(relativePath)
+
+    private fun moduleFileText(moduleId: String, relativePath: String): String =
+        TestSourceFiles.moduleText(moduleId, relativePath)
 
     private fun repoRoot(): Path {
         var current = Path.of("").toAbsolutePath()
