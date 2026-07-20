@@ -91,6 +91,7 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
         require(body.contains(username)) {
             "Keycloak whoami route did not receive Remote-User '$username': $body"
         }
+        auth.logout()
         println("      ✓ Trusted internal edge identity reached Keycloak route as $username")
     }
 
@@ -165,7 +166,7 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
     }
 
     test("Planka requires authentication for boards") {
-        val response = client.getRawResponse("${env.endpoints.planka}/api/boards")
+        val response = client.getRawResponse("${env.endpoints.planka}/api/users/me")
         
         require(response.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
             "Planka must reject unauthenticated boards API access: ${response.status}"
