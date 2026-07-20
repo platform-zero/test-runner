@@ -583,6 +583,8 @@ class ServiceClient(
         }
     }
 
+    suspend fun getUnauthenticatedRawResponse(url: String): HttpResponse = client.get(url)
+
     suspend fun getRawResponse(url: String, block: HttpRequestBuilder.() -> Unit): HttpResponse {
         val modelContextToken = if (isModelContextUrl(url)) modelContextBearerToken() else null
         return client.get(url) {

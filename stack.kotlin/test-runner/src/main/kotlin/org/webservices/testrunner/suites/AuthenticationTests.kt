@@ -20,7 +20,7 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
 
         repeat(attempts) { attempt ->
             try {
-                return client.getRawResponse(url)
+                return client.getUnauthenticatedRawResponse(url)
             } catch (e: Exception) {
                 val msg = e.message.orEmpty()
                 val retryable = msg.contains("Connection refused", ignoreCase = true) ||
