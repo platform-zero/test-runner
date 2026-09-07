@@ -139,7 +139,8 @@ data class ServiceEndpoints(
                 port = env("MARIADB_PORT")?.toInt() ?: 3306,
                 database = "bookstack",
                 user = env("MARIADB_USER") ?: "bookstack",
-                password = env("MARIADB_PASSWORD") ?: ""
+                password = env("MARIADB_PASSWORD") ?: "",
+                jdbcScheme = "mariadb"
             ),
             qdrant = env("QDRANT_URL") ?: "http://qdrant:6333",
             qdrantApiKey = env("QDRANT_API_KEY"),
@@ -274,14 +275,11 @@ data class DatabaseConfig(
     val port: Int,
     val database: String,
     val user: String,
-    val password: String
+    val password: String,
+    val jdbcScheme: String = if (port == 3306) "mariadb" else "postgresql"
 ) {
     val jdbcUrl: String
-        get() = when {
-            port == 5432 -> "jdbc:postgresql://$host:$port/$database"
-            port == 3306 -> "jdbc:mariadb://$host:$port/$database"
-            else -> "jdbc:postgresql://$host:$port/$database"
-        }
+        get() = "jdbc:$jdbcScheme://$host:$port/$database"
 }
 
 /**
