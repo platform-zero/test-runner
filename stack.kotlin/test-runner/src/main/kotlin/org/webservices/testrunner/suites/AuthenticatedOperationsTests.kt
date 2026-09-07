@@ -152,7 +152,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
         println("      ✓ Acquired Seafile token")
 
 
-        val response = tokens.authenticatedGet("seafile", "http://seafile:80/api2/repos/")
+        val response = tokens.authenticatedGet("seafile", "${env.endpoints.seafile}/api2/repos/")
         require(response.status == HttpStatusCode.OK) {
             "Failed to list libraries: ${response.status}"
         }
@@ -179,7 +179,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
             System.getenv("FORGEJO_API_TOKEN").isNullOrBlank() &&
             tokenResult.exceptionOrNull()?.message?.contains("403 Forbidden") == true
         ) {
-            val unauthenticatedResponse = client.getRawResponse("http://forgejo:3000/api/v1/user")
+            val unauthenticatedResponse = client.getRawResponse("${env.endpoints.forgejo}/api/v1/user")
             require(unauthenticatedResponse.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
                 "Forgejo API should reject unauthenticated local access when password token creation is disabled: ${unauthenticatedResponse.status}"
             }
@@ -191,7 +191,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
             System.getenv("FORGEJO_API_TOKEN").isNullOrBlank() &&
             !hasInteractiveCredentials
         ) {
-            val unauthenticatedResponse = client.getRawResponse("http://forgejo:3000/api/v1/user")
+            val unauthenticatedResponse = client.getRawResponse("${env.endpoints.forgejo}/api/v1/user")
             require(unauthenticatedResponse.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden)) {
                 "Forgejo API should reject unauthenticated local access when no pre-generated token is configured: ${unauthenticatedResponse.status}"
             }
@@ -207,7 +207,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
         println("      ✓ Acquired Forgejo access token")
 
 
-        val response = tokens.authenticatedGet("forgejo", "http://forgejo:3000/api/v1/user/repos")
+        val response = tokens.authenticatedGet("forgejo", "${env.endpoints.forgejo}/api/v1/user/repos")
         require(response.status == HttpStatusCode.OK) {
             "Failed to list repos: ${response.status}"
         }
@@ -237,7 +237,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
             tokenResult.getOrThrow()
             println("      ✓ Acquired Planka authentication token")
 
-            val response = tokens.authenticatedGet("planka", "http://planka:1337/api/boards")
+            val response = tokens.authenticatedGet("planka", "${env.endpoints.planka}/api/boards")
             require(response.status == HttpStatusCode.OK) {
                 "Failed to list boards: ${response.status}"
             }
@@ -249,7 +249,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
                 "Failed to acquire Planka token: $error"
             }
 
-            val response = client.getRawResponse("http://planka:1337/api/boards")
+            val response = client.getRawResponse("${env.endpoints.planka}/api/boards")
             val body = response.bodyAsText()
             val blocksUnauthenticatedApi = response.status in listOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden) ||
                 (response.status == HttpStatusCode.OK && body.contains("<title>Planka</title>", ignoreCase = true))
@@ -366,7 +366,7 @@ suspend fun TestRunner.authenticatedOperationsTests() = suite("Authenticated Ope
         ensureEdgeSession()
 
         
-        val directResponse = client.getRawResponse("http://ntfy:80/v1/health")
+        val directResponse = client.getRawResponse("${env.endpoints.ntfy}/v1/health")
         require(directResponse.status == HttpStatusCode.OK) {
             "Ntfy container not responding: ${directResponse.status}"
         }
