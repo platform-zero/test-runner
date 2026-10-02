@@ -110,7 +110,8 @@ suspend fun TestRunner.infrastructureTests() = suite("Infrastructure Tests") {
         var lastError: Exception? = null
         repeat(3) { attempt ->
             try {
-                val response = client.getRawResponse("http://keycloak-auth-gateway:4180/ping")
+                val gateway = System.getenv("KEYCLOAK_AUTH_GATEWAY_URL") ?: "http://keycloak-auth-gateway:4180"
+                val response = client.getRawResponse("${gateway.trimEnd('/')}/ping")
                 response.status shouldBe HttpStatusCode.OK
                 return@test
             } catch (e: Exception) {
