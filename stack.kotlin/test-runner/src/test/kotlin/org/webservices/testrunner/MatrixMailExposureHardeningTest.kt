@@ -114,7 +114,7 @@ class MatrixMailExposureHardeningTest {
         assertTrue(matrixRtcBlock.contains("reverse_proxy matrix-rtc-auth:8080"))
         assertTrue(matrixRtcBlock.contains("@matrix_rtc_sfu path /livekit/sfu /livekit/sfu/*"))
         assertTrue(matrixRtcBlock.contains("uri strip_prefix /livekit/sfu"))
-        assertTrue(matrixRtcBlock.contains("reverse_proxy livekit:7880"))
+        assertTrue(matrixRtcBlock.contains("reverse_proxy host.containers.internal:7880"))
         assertTrue(matrixRtcBlock.contains("respond 404"))
         assertFalse(matrixRtcBlock.contains("authelia_auth"))
         assertFalse(matrixRtcBlock.contains("keycloak_auth"))
