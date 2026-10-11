@@ -416,15 +416,17 @@ class ServiceClient(
         collections: List<String> = listOf("*"),
         limit: Int = 5,
         mode: String = "hybrid",
-        timeoutMs: Long? = null
+        timeoutMs: Long? = null,
+        indexName: String = "knowledge"
     ): SearchResult {
         if (mode == "vector") {
             return vectorSearch(query, collections, limit, timeoutMs)
         }
 
         return try {
+            require(Regex("[a-z0-9][a-z0-9_-]{0,254}").matches(indexName)) { "Invalid OpenSearch index name" }
             val executeRequest: suspend () -> HttpResponse = {
-                client.post("${endpoints.searchService.trimEnd('/')}/knowledge/_search") {
+                client.post("${endpoints.searchService.trimEnd('/')}/$indexName/_search") {
                     openSearchBasicAuthHeader()?.let { header(HttpHeaders.Authorization, it) }
                     contentType(ContentType.Application.Json)
                     setBody(buildJsonObject {
@@ -456,9 +458,6 @@ class ServiceClient(
             }
             val response = if (timeoutMs != null) withTimeout(timeoutMs) { executeRequest() } else executeRequest()
             val body = response.bodyAsText()
-            if (response.status == HttpStatusCode.NotFound && body.contains("index_not_found_exception")) {
-                return SearchResult(true, emptySearchResult(mode))
-            }
             val raw = Json.parseToJsonElement(body)
             val normalized = if (response.status == HttpStatusCode.OK) normalizeOpenSearchSearchResult(raw, mode) else raw
 
@@ -501,21 +500,12 @@ class ServiceClient(
             }
             val response = if (timeoutMs != null) withTimeout(timeoutMs) { executeRequest() } else executeRequest()
             val body = response.bodyAsText()
-            if (response.status == HttpStatusCode.NotFound) {
-                return SearchResult(true, emptySearchResult("vector"))
-            }
             val raw = Json.parseToJsonElement(body)
             val normalized = if (response.status == HttpStatusCode.OK) normalizeQdrantSearchResult(raw) else raw
             SearchResult(response.status == HttpStatusCode.OK, normalized)
         } catch (e: Exception) {
             SearchResult(false, JsonPrimitive(e.message ?: "Unknown error"))
         }
-    }
-
-    private fun emptySearchResult(mode: String): JsonObject = buildJsonObject {
-        put("results", JsonArray(emptyList()))
-        put("total", 0)
-        put("mode", mode)
     }
 
     private fun normalizeQdrantSearchResult(raw: JsonElement): JsonObject {
