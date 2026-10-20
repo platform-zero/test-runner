@@ -1,37 +1,60 @@
 package org.webservices.testrunner.suites
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
+import java.nio.file.Files
 
 internal fun isTestdevProfile(): Boolean =
     System.getenv("TESTDEV_SKIP_GPU_INGESTION") == "1"
 
-private val selectedComponentNames: Set<String>? by lazy {
-    val candidates = listOfNotNull(
-        System.getenv("TEST_RUNNER_COMPONENTS_LOCK_FILE"),
-        System.getenv("WEBSERVICES_COMPONENTS_LOCK_FILE"),
-        "/component-lock/components.lock.json",
-        "/runtime/components.lock.json",
-        "/app/build/site/components.lock.json",
-        "/app/site/components.lock.json",
-    ).filter { it.isNotBlank() }
+private val selectedComponentNames: Set<String>? by lazy { loadSelectedComponentNames() }
 
-    val lockFile = candidates
-        .map(::File)
-        .firstOrNull { it.isFile && it.canRead() }
-        ?: return@lazy null
+internal fun parseSelectedComponentNames(document: String): Set<String> = try {
+    val root = Json.parseToJsonElement(document) as? JsonObject ?: error("not an object")
+    val components = root["components"] as? JsonArray ?: error("not an array")
+    check(components.isNotEmpty())
+    val names = components.map { value ->
+        val primitive = value as? JsonPrimitive ?: error("not a string")
+        check(primitive.isString && primitive.content.matches(Regex("[a-z0-9][a-z0-9-]*")))
+        primitive.content
+    }
+    check(names.size == names.toSet().size)
+    names.toSet()
+} catch (_: Exception) {
+    // Do not echo a mistakenly mounted document or parser's input excerpt.
+    throw IllegalStateException("Invalid component selection authority")
+}
 
-    runCatching {
-        Json.parseToJsonElement(lockFile.readText())
-            .jsonObject["components"]
-            ?.jsonArray
-            ?.mapNotNull { it.jsonPrimitive.contentOrNull }
-            ?.toSet()
-    }.getOrNull()
+internal fun loadSelectedComponentNames(
+    environment: Map<String, String> = System.getenv(),
+    defaultCandidates: List<File> = listOf(
+        File("/component-lock/components.lock.json"),
+        File("/runtime/components.lock.json"),
+        File("/app/build/site/components.lock.json"),
+        File("/app/site/components.lock.json"),
+    ),
+): Set<String>? {
+    val explicitKey = listOf("TEST_RUNNER_COMPONENTS_LOCK_FILE", "WEBSERVICES_COMPONENTS_LOCK_FILE")
+        .firstOrNull(environment::containsKey)
+    val lockFile = if (explicitKey != null) {
+        val path = environment.getValue(explicitKey)
+        check(path.isNotBlank()) { "Explicit component selection authority is missing or unreadable" }
+        File(path).also {
+            check(it.isFile && it.canRead()) { "Explicit component selection authority is missing or unreadable" }
+        }
+    } else {
+        defaultCandidates.firstOrNull { it.isFile } ?: return null
+    }
+    check(!Files.isSymbolicLink(lockFile.toPath()) && lockFile.canRead() && lockFile.length() <= 1024 * 1024) {
+        "Linked, unreadable or oversized component selection authority"
+    }
+    val document = try { lockFile.readText() } catch (_: Exception) {
+        throw IllegalStateException("Cannot read component selection authority")
+    }
+    return parseSelectedComponentNames(document)
 }
 
 internal fun selectedComponentsKnown(): Boolean =

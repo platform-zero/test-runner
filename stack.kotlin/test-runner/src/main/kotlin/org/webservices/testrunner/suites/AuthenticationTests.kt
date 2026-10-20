@@ -108,13 +108,15 @@ suspend fun TestRunner.authenticationTests() = suite("Authentication & Authoriza
         println("      ✓ Grafana correctly requires authentication")
     }
 
-    test("Vaultwarden requires authentication for API") {
-        val response = client.getRawResponse("${env.endpoints.vaultwarden}/api/accounts/profile")
-        require(response.status == HttpStatusCode.Unauthorized) {
-            "Vaultwarden should require authentication: ${response.status}"
-        }
+    if (isSelectedComponent("vaultwarden")) {
+        test("Vaultwarden requires authentication for API") {
+            val response = client.getRawResponse("${env.endpoints.vaultwarden}/api/accounts/profile")
+            require(response.status == HttpStatusCode.Unauthorized) {
+                "Vaultwarden should require authentication: ${response.status}"
+            }
 
-        println("      ✓ Vaultwarden correctly requires authentication")
+            println("      ✓ Vaultwarden correctly requires authentication")
+        }
     }
 
     test("BookStack requires authentication for content") {

@@ -82,7 +82,9 @@ class TestArchitectureTest {
             "test-runner",
             "stack.kotlin/test-runner/src/main/kotlin/org/webservices/testrunner/suites/ManagedSuiteRegistry.kt",
         )
-        val registered = registrationPattern.findAll(registrySource).map { it.groupValues[1] }.toList()
+        val optionalRegistrationPattern = Regex("""invokeOptionalModuleSuite\("[A-Za-z0-9_.]+", "([A-Za-z0-9_]+Tests)"\)""")
+        val registered = registrationPattern.findAll(registrySource).map { it.groupValues[1] }.toList() +
+            optionalRegistrationPattern.findAll(registrySource).map { it.groupValues[1] }.toList()
 
         assertEquals(registered.size, registered.toSet().size, "A managed leaf implementation is registered more than once")
         assertEquals(declared, registered.toSet(), "Managed leaf declarations and registry entries must match")

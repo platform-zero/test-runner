@@ -1,6 +1,10 @@
 package org.webservices.testrunner.suites
 
 import org.webservices.testrunner.framework.TestRunner
+import java.lang.reflect.InvocationTargetException
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 internal enum class ManagedSuiteCategory {
     CORE,
@@ -59,7 +63,9 @@ internal val managedSuiteRegistry: List<ManagedSuiteRegistration> = listOf(
     ManagedSuiteRegistration("jupyterhub", ManagedSuiteCategory.APPS, setOf("jupyterhub")) { jupyterHubExtendedProductivityTests() },
     ManagedSuiteRegistration("jupyterhub-ui", ManagedSuiteCategory.APPS, setOf("jupyterhub")) { userInterfaceTests() },
     ManagedSuiteRegistration("kopia", ManagedSuiteCategory.APPS, setOf("kopia")) { backupTests() },
-    ManagedSuiteRegistration("vaultwarden-security", ManagedSuiteCategory.APPS, setOf("vaultwarden")) { securityTests() },
+    ManagedSuiteRegistration("vaultwarden-security", ManagedSuiteCategory.APPS, setOf("vaultwarden")) {
+        invokeOptionalModuleSuite("org.webservices.testrunner.suites.SecurityTestsKt", "securityTests")
+    },
 
     ManagedSuiteRegistration("opensearch-retrieval", ManagedSuiteCategory.LIVE_INGESTION, setOf("search")) { searchServiceTests() },
     ManagedSuiteRegistration("bookstack-publication", ManagedSuiteCategory.LIVE_INGESTION, setOf("pipeline", "bookstack")) { bookStackIntegrationTests() },
@@ -76,3 +82,22 @@ internal suspend fun TestRunner.runManagedCategory(category: ManagedSuiteCategor
         }
         .forEach { registration -> registration.run.invoke(this) }
 }
+
+/**
+ * Optional module leaf code is absent from an unselected composition's classpath.
+ * Resolve only AFTER the required-component filter, without a compile-time link.
+ * A SELECTED missing/broken implementation fails; never silently skip it. Symbol
+ * names are source-owned registrations, not environment or request input.
+ */
+internal suspend fun TestRunner.invokeOptionalModuleSuite(fileClass: String, function: String): Unit =
+    suspendCoroutineUninterceptedOrReturn { continuation ->
+        try {
+            val implementation = Class.forName(fileClass).getMethod(
+                function, TestRunner::class.java, Continuation::class.java,
+            )
+            val result = implementation.invoke(null, this, continuation)
+            if (result === COROUTINE_SUSPENDED) result else Unit
+        } catch (failure: InvocationTargetException) {
+            throw failure.targetException
+        }
+    }
