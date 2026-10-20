@@ -92,8 +92,8 @@ class TestArchitectureTest {
 
     @Test
     fun `deployed all runner retains source Kotlin and complete browser tiers`() {
-        val runner = TestSourceFiles.repositoryText("stack.containers/test-runner/run-tests.sh")
-        val entrypoint = TestSourceFiles.repositoryText("stack.containers/test-runner/container-entrypoint.sh")
+        val runner = TestSourceFiles.moduleText("test-runners", "stack.containers/test-runner/run-tests.sh")
+        val entrypoint = TestSourceFiles.moduleText("test-runners", "stack.containers/test-runner/container-entrypoint.sh")
 
         listOf("kt-full", "ts-unit", "ts-e2e-all").forEach { assertTrue(runner.contains(it)) }
         listOf("boundary", "app-smoke", "sso", "mobile", "workflow", "visual").forEach {
